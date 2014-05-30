@@ -77,10 +77,18 @@ typedef struct img
 	size_t undosz_bottom;
 } img_t;
 
-typedef struct window window_t;
-struct window
+typedef struct widget widget_t;
+struct widget
 {
-	int w, h, x, y;
+	widget_t *parent, *child, *sibp, *sibn;
+	int w, h;
+	int x, y; // Don't access these during draw - they are parent-relative
+	void (*f_free)(widget_t *g);
+	void (*f_draw)(widget_t *g, int sx, int sy);
+	void (*f_pack)(widget_t *g, int w, int h);
+	void (*f_mouse_pass)(widget_t *g, int focused);
+	void (*f_mouse_button)(widget_t *g, int mx, int my, int button, int state);
+	void (*f_mouse_move)(widget_t *g, int mx, int my, int dx, int dy, uint32_t buttons);
 	void *v1;
 };
 
@@ -117,7 +125,18 @@ void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int 
 void img_undirty(img_t *img);
 img_t *img_new(int w, int h);
 
+// tool.c
+
+// widget.c
+void widget_reparent(widget_t *parent, widget_t *child);
+int widget_mouse_button(SDL_Event *ev, int bx, int by, widget_t *g);
+void widget_free(widget_t *g);
+widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f_init)(widget_t *g));
+widget_t *w_pal_init(widget_t *g);
+widget_t *w_img_init(widget_t *g);
+
 // main.c
 extern SDL_Surface *screen;
 extern img_t *rootimg;
+extern int tool_palidx;
 
