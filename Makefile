@@ -5,6 +5,9 @@ SRCDIR = src
 BINNAME = xra
 
 OBJS = \
+	$(OBJDIR)/conv.o \
+	$(OBJDIR)/draw.o \
+	$(OBJDIR)/img.o \
 	\
 	$(OBJDIR)/main.o
 	#
