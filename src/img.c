@@ -43,6 +43,7 @@ img_t *img_new(int w, int h)
 	img->undosz_bottom = 0;
 
 	// Image palette
+#if 0
 	for(i = 0; i < 256; i++)
 	{
 		int hi = i;
@@ -66,6 +67,38 @@ img_t *img_new(int w, int h)
 		b = b*255.0 + 0.5;
 
 		img->pal[i] = rgb32(r, g, b);
+	}
+#endif
+	for(i = 0; i < 256; i++)
+		img->pal[i] = rgb32(0xFF, 0, 0xFF);
+
+	// EGA + grey 16 + websafe
+	for(i = 0; i < 16; i++)
+	{
+		//
+		int r = (i&4 ? 170 : 0);
+		int g = (i&2 ? 170 : 0);
+		int b = (i&1 ? 170 : 0);
+		int intens = (i&8 ? 85 : 0); 
+
+		if(i == 6) g = 85;
+
+		img->pal[i] = rgb32(r|intens, g|intens, b|intens);
+	}
+
+	for(i = 0; i < 16; i++)
+	{
+		int c = (i+1)*0x0F;
+		img->pal[i + 16] = rgb32(c, c, c);
+	}
+
+	for(i = 0; i < 216; i++)
+	{
+		int r = (i/36)*0x33;
+		int g = ((i/6)%6)*0x33;
+		int b = (i%6)*0x33;
+
+		img->pal[i + 32] = rgb32(r, g, b);
 	}
 
 	// Image data

@@ -68,7 +68,7 @@ uint16_t c32to16(uint32_t c, int x, int y)
 	b += d;   if(b > 255) b = 255;
 
 	r >>= 3;
-	g >>= 3;
+	g >>= 2;
 	b >>= 3;
 
 	return (r<<11) | (g<<5) | b;
