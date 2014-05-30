@@ -1,0 +1,39 @@
+# objects
+*.o
+
+# final binaries
+pixra
+
+# admission that i'm not actually perfect
+*.core
+
+# windows build crap (not supported yet)
+winlibs/
+*.dll
+
+# windows crap i mean why the hell does it do this crap
+stdout.txt
+stderr.txt
+
+# backups, just in case you can't configure your editor properly
+*.bak
+*~
+
+# gprof
+gmon.out
+
+# kate
+*.kate-swp
+
+# vim
+.*.swp
+.*.swo
+
+# visual studio files (personal config and whatnot)
+*.suo
+*.ncb
+*.user
+
+# build stuff
+build/*
+

@@ -2,7 +2,7 @@
 # (use gmake)
 OBJDIR = build
 SRCDIR = src
-BINNAME = xra
+BINNAME = pixra
 
 OBJS = \
 	$(OBJDIR)/conv.o \
