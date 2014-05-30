@@ -88,6 +88,20 @@ struct window
 #define IMG16(img, x, y) ((x) + (uint16_t *)(img->w * (y) + (uint8_t *)(img->data)))
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
 
+// TODO: refactor these into some GUI toolkit
+#define EJUSTX(x) (screen->w - x)
+#define EJUSTY(y) (screen->h - y)
+
+#define W_IMG_X1 132
+#define W_IMG_Y1 12
+#define W_IMG_X2 EJUSTX(0)
+#define W_IMG_Y2 EJUSTY(0)
+
+#define W_PAL_X1 0
+#define W_PAL_Y1 12
+#define W_PAL_X2 (0+128)
+#define W_PAL_Y2 (12+512)
+
 // conv.c
 extern const uint32_t dtab[];
 uint32_t rgba32(int r, int g, int b, int a);
