@@ -203,6 +203,7 @@ static void w_cpick_mouse_button(widget_t *g, int mx, int my, int button, int st
 
 	// Change colour
 	uint32_t *pp = &rootimg->pal[tool_palidx];
+
 	switch(my)
 	{
 		case 0:
@@ -322,7 +323,41 @@ static void w_img_pack(widget_t *g, int w, int h)
 static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int state)
 {
 	if(!state) return;
-	if(button != 0) return;
+	if(button != 0)
+	{
+		// Calculate old zoom info
+		int lzoom = rootimg->zoom;
+		int lzx = rootimg->zx + mx/lzoom;
+		int lzy = rootimg->zy + my/lzoom;
+
+		// Check scroll wheels
+		if(button == 4)
+		{
+			rootimg->zoom++;
+			if(rootimg->zoom > 64)
+				rootimg->zoom = 64;
+
+		} else if(button == 3) {
+			rootimg->zoom--;
+			if(rootimg->zoom < 1)
+				rootimg->zoom = 1;
+		}
+
+		// No scroll? Return.
+		if(rootimg->zoom == lzoom)
+			return;
+
+		// Calculate new zoom info
+		int nzoom = rootimg->zoom;
+		int nzx = rootimg->zx + mx/nzoom;
+		int nzy = rootimg->zy + my/nzoom;
+
+		// Move camera
+		rootimg->zx -= nzx - lzx;
+		rootimg->zy -= nzy - lzy;
+
+		return;
+	}
 
 	int x = mx;
 	int y = my;
@@ -397,8 +432,8 @@ static void w_img_mouse_motion_lmb(widget_t *g, int mx, int my, int dx, int dy, 
 	if(bail)
 	{
 		// Get image position
-		int mdx = (mx >= (g->w>>1) ? -1 : 1) * (g->w>>1);
-		int mdy = (my >= (g->h>>1) ? -1 : 1) * (g->h>>1);
+		int mdx = (mx >= 7*(g->w>>3) ? -1 : (mx <= (g->w>>3) ? 1 : 0)) * (g->w>>1);
+		int mdy = (my >= 7*(g->h>>3) ? -1 : (my <= (g->h>>3) ? 1 : 0)) * (g->h>>1);
 		mdx /= rootimg->zoom;
 		mdy /= rootimg->zoom;
 
@@ -439,8 +474,8 @@ static void w_img_mouse_motion_mmb(widget_t *g, int mx, int my, int dx, int dy, 
 	if(bail)
 	{
 		// Get image position
-		int mdx = (mx >= (g->w>>1) ? -1 : 1) * (g->w>>1);
-		int mdy = (my >= (g->h>>1) ? -1 : 1) * (g->h>>1);
+		int mdx = (mx >= 7*(g->w>>3) ? -1 : (mx <= (g->w>>3) ? 1 : 0)) * (g->w>>1);
+		int mdy = (my >= 7*(g->h>>3) ? -1 : (my <= (g->h>>3) ? 1 : 0)) * (g->h>>1);
 		mdx /= rootimg->zoom;
 		mdy /= rootimg->zoom;
 

@@ -105,10 +105,15 @@ img_t *img_new(int w, int h)
 	img->data = malloc(w*h);
 	img->ldata = malloc(w*h);
 
-	// TODO: Actually *clear* this
+#if 0
+	// TEST: XOR pattern
 	for(y = 0; y < h; y++)
 	for(x = 0; x < w; x++)
 		*IMG8(img, x, y) = x^y;
+#else
+	// Clear image
+	memset(img->data, 0, w*h);
+#endif
 	
 	// Image return
 	return img;
