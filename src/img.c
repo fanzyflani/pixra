@@ -5,6 +5,14 @@ See LICENCE.txt for licensing information (TL;DR: MIT-style).
 
 #include "common.h"
 
+uint16_t io_get2le(FILE *fp)
+{
+	int v0 = fgetc(fp);
+	int v1 = fgetc(fp);
+
+	return (v1<<8)|v0;
+}
+
 void img_undirty(img_t *img)
 {
 	int i, j;
@@ -22,6 +30,19 @@ void img_undirty(img_t *img)
 	img->dirty = 0;
 }
 
+void img_free(img_t *img)
+{
+	// Free some simple pointers
+	if(img->data != NULL) free(img->data);
+	if(img->ldata != NULL) free(img->ldata);
+	if(img->fname != NULL) free(img->fname);
+
+	// TODO: Undo stack
+
+	// Free image
+	free(img);
+}
+
 img_t *img_new(int w, int h)
 {
 	int x, y, i;
@@ -33,8 +54,9 @@ img_t *img_new(int w, int h)
 	img->h = h;
 
 	// Image state
+	img->fname = NULL;
 	img->dirty = 1;
-	img->zoom = 8;
+	img->zoom = 2;
 	img->zx = 0;
 	img->zy = 0;
 	img->undo_top = NULL;
@@ -119,3 +141,124 @@ img_t *img_new(int w, int h)
 	return img;
 }
 
+img_t *img_load_tga(const char *fname)
+{
+	FILE *fp;
+	int x, y, i;
+	int r, g, b;
+	uint8_t t;
+
+	// Open file
+	fp = fopen(fname, "rb");
+	if(fp == NULL)
+	{
+		perror("img_load_tga(fopen)");
+		return NULL;
+	}
+
+	// Read TGA header
+	uint8_t idlen = fgetc(fp);
+	uint8_t cmaptyp = fgetc(fp);
+	uint8_t datatyp = fgetc(fp);
+	uint16_t cmapbeg = io_get2le(fp);
+	uint16_t cmaplen = io_get2le(fp);
+	uint8_t cmapbpp = fgetc(fp);
+	int16_t ix = io_get2le(fp);
+	int16_t iy = io_get2le(fp);
+	uint16_t iw = io_get2le(fp);
+	uint16_t ih = io_get2le(fp);
+	uint8_t ibpp = fgetc(fp);
+	uint8_t idesc = fgetc(fp);
+
+	// Check if this image is supported
+	if(datatyp != 1)
+	{
+		fprintf(stderr, "img_load_tga: only indexed tga images supported\n");
+		fclose(fp);
+		return NULL;
+	}
+
+	if(cmaptyp != 1)
+	{
+		fprintf(stderr, "img_load_tga: must contain a colour map of type 1\n");
+		fclose(fp);
+		return NULL;
+	}
+
+	if(ibpp != 8)
+	{
+		fprintf(stderr, "img_load_tga: only 8bpp image data supported\n");
+		fclose(fp);
+		return NULL;
+	}
+
+	if(cmapbpp != 24)
+	{
+		fprintf(stderr, "img_load_tga: only 24bpp colour maps supported\n");
+		fclose(fp);
+		return NULL;
+	}
+
+	if((idesc & ~0x20) != 0x00)
+	{
+		fprintf(stderr, "img_load_tga: given image descriptor flags not supported\n");
+		fclose(fp);
+		return NULL;
+	}
+
+	if(iw <= 0 || ih <= 0)
+	{
+		fprintf(stderr, "img_load_tga: invalid dimensions\n");
+		fclose(fp);
+		return NULL;
+	}
+
+	// Skip comment
+	while(idlen-- > 0) fgetc(fp);
+
+	// Create image
+	img_t *img = img_new(iw, ih);
+	img->fname = fname;
+
+	// Load palette
+	for(i = 0; i < cmaplen; i++)
+	{
+		r = fgetc(fp);
+		g = fgetc(fp);
+		b = fgetc(fp);
+
+		img->pal[i] = rgb32(r, g, b);
+	}
+
+	// Clear remainder of palette
+	for(; i < 256; i++)
+		img->pal[i] = rgb32(0, 0, 0);
+
+	// Flip if origin on bottom
+	if((idesc & 0x20) == 0)
+	{
+		for(y = 0; y < (ih>>1); y++)
+		for(x = 0; x < iw; x++)
+		{
+			t = *IMG8(img, x, y);
+			*IMG8(img, x, y) = *IMG8(img, x, ih-1-y);
+			*IMG8(img, x, ih-1-y) = t;
+		}
+	}
+
+	// Close + return
+	fclose(fp);
+	return img;
+}
+
+int img_save_tga(const char *fname, img_t *img)
+{
+	if(fname == NULL)
+	{
+		fprintf(stderr, "img_save_tga: filename not set\n");
+		return 1;
+	}
+
+	printf("TODO: Save Image\n");
+	return 1;
+}

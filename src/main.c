@@ -16,6 +16,7 @@ widget_t *g_img = NULL;
 widget_t *g_pal = NULL;
 widget_t *g_cpick = NULL;
 
+int key_mods = 0;
 int mouse_x = 0;
 int mouse_y = 0;
 
@@ -31,6 +32,35 @@ void mainloop_draw(void)
 	// Blit
 	SDL_UnlockSurface(screen);
 	SDL_Flip(screen);
+}
+
+void handle_key(int key, int state)
+{
+	int maskset = 0;
+
+	// Check for modifier keys
+	if(0) ;
+	else if(key == SDLK_LCTRL) maskset = KM_LCTRL;
+	else if(key == SDLK_RCTRL) maskset = KM_RCTRL;
+	else if(key == SDLK_LSHIFT) maskset = KM_LSHIFT;
+	else if(key == SDLK_RSHIFT) maskset = KM_RSHIFT;
+
+	// Apply modifiers
+	if(state) key_mods |=  maskset;
+	else /**/ key_mods &= ~maskset;
+
+	// Do other keys
+	if(maskset != 0) return;
+
+	if(!state)
+	switch(key)
+	{
+		case SDLK_s:
+			if((key_mods & KM_CTRL))
+				img_save_tga(rootimg->fname, rootimg);
+
+			break;
+	}
 }
 
 void mainloop(void)
@@ -55,6 +85,11 @@ void mainloop(void)
 				quitflag = 1;
 				break;
 
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				handle_key(ev.key.keysym.sym, ev.type == SDL_KEYDOWN);
+				break;
+
 			case SDL_MOUSEMOTION:
 				mouse_x = ev.motion.x;
 				mouse_y = ev.motion.y;
@@ -73,6 +108,23 @@ void mainloop(void)
 
 int main(int argc, char *argv[])
 {
+	// Read arguments
+	if(argc <= 3)
+	{
+		printf("usage:\n\t%s width height filename.tga\n", argv[0]);
+		return 99;
+	}
+
+	int w = atoi(argv[1]);
+	int h = atoi(argv[2]);
+	if(w <= 0 || h <= 0)
+	{
+		printf("ERROR: invalid dimensions %ix%i\n", w, h);
+		return 1;
+	}
+
+	const char *fname = argv[3];
+
 	// Init SDL
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
@@ -84,8 +136,13 @@ int main(int argc, char *argv[])
 	SDL_WM_SetCaption("pixra - fast paint tool", NULL);
 	screen = SDL_SetVideoMode(800, 600, 16, 0);
 
-	// Set stuff up
-	rootimg = img_new(400, 300);
+	// Set up image
+	rootimg = NULL;
+	if(rootimg == NULL) rootimg = img_load_tga(fname);
+	if(rootimg == NULL) rootimg = img_new(w, h);
+	rootimg->fname = fname;
+
+	// Set up GUI
 	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);
 	g_img = widget_new(rootg, W_IMG_X1, W_IMG_Y1, W_IMG_X2 - W_IMG_X1, W_IMG_Y2 - W_IMG_Y1, w_img_init);
 	g_pal = widget_new(rootg, W_PAL_X1, W_PAL_Y1, W_PAL_X2 - W_PAL_X1, W_PAL_Y2 - W_PAL_Y1, w_pal_init);

@@ -68,6 +68,7 @@ typedef struct img
 	uint8_t *data;
 
 	// Image state
+	char *fname;
 	int dirty;
 	int zoom, zx, zy;
 	uint8_t *ldata;
@@ -91,6 +92,13 @@ struct widget
 	void (*f_mouse_motion)(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons);
 	void *v1;
 };
+
+#define KM_CTRL     0x00000003
+#define KM_LCTRL    0x00000001
+#define KM_RCTRL    0x00000002
+#define KM_SHIFT    0x0000000C
+#define KM_LSHIFT   0x00000004
+#define KM_RSHIFT   0x00000008
 
 #define SCR16(x, y) ((x) + (uint16_t *)(screen->pitch * (y) + (uint8_t *)(screen->pixels)))
 #define IMG16(img, x, y) ((x) + (uint16_t *)(img->w * (y) + (uint8_t *)(img->data)))
@@ -123,7 +131,10 @@ void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int 
 
 // img.c
 void img_undirty(img_t *img);
+void img_free(img_t *img);
 img_t *img_new(int w, int h);
+img_t *img_load_tga(const char *fname);
+int img_save_tga(const char *fname, img_t *img);
 
 // tool.c
 
