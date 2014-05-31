@@ -88,7 +88,7 @@ struct widget
 	void (*f_pack)(widget_t *g, int w, int h);
 	void (*f_mouse_pass)(widget_t *g, int focused);
 	void (*f_mouse_button)(widget_t *g, int mx, int my, int button, int state);
-	void (*f_mouse_move)(widget_t *g, int mx, int my, int dx, int dy, uint32_t buttons);
+	void (*f_mouse_motion)(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons);
 	void *v1;
 };
 
@@ -129,6 +129,8 @@ img_t *img_new(int w, int h);
 
 // widget.c
 void widget_reparent(widget_t *parent, widget_t *child);
+int widget_mouse_motion(int x, int y, int dx, int dy, int buttons, widget_t *g);
+int widget_mouse_motion_sdl(SDL_Event *ev, int bx, int by, widget_t *g);
 int widget_mouse_button(int x, int y, int button, int state, widget_t *g);
 int widget_mouse_button_sdl(SDL_Event *ev, int bx, int by, widget_t *g);
 void widget_free(widget_t *g);

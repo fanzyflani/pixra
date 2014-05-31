@@ -33,6 +33,41 @@ void widget_reparent(widget_t *parent, widget_t *child)
 	}
 }
 
+int widget_mouse_motion(int x, int y, int dx, int dy, int buttons, widget_t *g)
+{
+	int bail = 0;
+
+	x -= g->x;
+	y -= g->y;
+
+	// Check if we were in the widget
+	x -= dx; y -= dy;
+	if(x < 0 || y < 0 || x >= g->w || y >= g->h)
+		return 0;
+
+	// Check if we are still in the widget, or if we are bailing
+	x += dx; y += dy;
+	if(x < 0 || y < 0 || x >= g->w || y >= g->h)
+		bail = 1;
+
+	// Call our function
+	if(g->f_mouse_motion != NULL)
+		g->f_mouse_motion(g, x, y, dx, dy, bail, buttons);
+
+	return 1;
+}
+
+int widget_mouse_motion_sdl(SDL_Event *ev, int bx, int by, widget_t *g)
+{
+	int x = ev->motion.x - bx;
+	int y = ev->motion.y - by;
+	int dx = ev->motion.xrel;
+	int dy = ev->motion.yrel;
+	int buttons = ev->motion.state;
+
+	return widget_mouse_motion(x, y, dx, dy, buttons, g);
+}
+
 int widget_mouse_button(int x, int y, int button, int state, widget_t *g)
 {
 	x -= g->x;
@@ -107,7 +142,7 @@ widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f
 	g->f_pack = NULL;
 	g->f_mouse_pass = NULL;
 	g->f_mouse_button = NULL;
-	g->f_mouse_move = NULL;
+	g->f_mouse_motion = NULL;
 
 	return f_init(g);
 }
@@ -129,12 +164,15 @@ static void w_pal_draw(widget_t *g, int sx, int sy)
 		rootimg->pal[i]);
 	}
 
+	draw_rect32(sx, sy + 512, sx + 127, sy + 512 + 15, rgb32(255, 255, 255));
+	draw_rect32(sx + 2, sy + 512 + 2, sx + 127 - 2, sy + 512 + 15 - 2, rootimg->pal[tool_palidx]);
+
 }
 
 static void w_pal_pack(widget_t *g, int w, int h)
 {
 	g->w = 128;
-	g->h = 512;
+	g->h = 512 + 16;
 }
 
 static void w_pal_mouse_button(widget_t *g, int mx, int my, int button, int state)
@@ -197,11 +235,43 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 
 }
 
+static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
+{
+	if((buttons & 1) == 0) return;
+
+	int x = mx;
+	int y = my;
+	int lx = x + dx;
+	int ly = y + dy;
+
+	// Widget -> Image mapping
+	x /= rootimg->zoom;
+	y /= rootimg->zoom;
+	x += rootimg->zx;
+	y += rootimg->zy;
+
+	// Widget -> Image mapping for old position
+	lx /= rootimg->zoom;
+	ly /= rootimg->zoom;
+	lx += rootimg->zx;
+	ly += rootimg->zy;
+	
+	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
+
+	// Put a pixel somewhere
+	if(lx != x && ly != y)
+	{
+		*IMG8(rootimg, x, y) = tool_palidx;
+		rootimg->dirty = 1; // TODO: Several "dirty" flags
+	}
+}
+
 widget_t *w_img_init(widget_t *g)
 {
 	g->f_draw = w_img_draw;
 	g->f_pack = w_img_pack;
 	g->f_mouse_button = w_img_mouse_button;
+	g->f_mouse_motion = w_img_mouse_motion;
 
 	return g;
 }
@@ -246,11 +316,22 @@ static void w_desk_mouse_button(widget_t *g, int mx, int my, int button, int sta
 			return;
 }
 
+static void w_desk_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
+{
+	widget_t *child;
+
+	// Traverse children
+	for(child = g->child; child != NULL; child = child->sibn)
+		if(widget_mouse_motion(mx, my, dx, dy, buttons, child))
+			return;
+}
+
 widget_t *w_desk_init(widget_t *g)
 {
 	g->f_draw = w_desk_draw;
 	g->f_pack = w_desk_pack;
 	g->f_mouse_button = w_desk_mouse_button;
+	g->f_mouse_motion = w_desk_mouse_motion;
 
 	return g;
 }

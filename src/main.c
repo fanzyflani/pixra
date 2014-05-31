@@ -51,11 +51,13 @@ void mainloop(void)
 				quitflag = 1;
 				break;
 
+			case SDL_MOUSEMOTION:
+				widget_mouse_motion_sdl(&ev, 0, 0, rootg);
+				break;
+
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
-				0
-				|| widget_mouse_button_sdl(&ev, 0, 0, rootg)
-				;
+				widget_mouse_button_sdl(&ev, 0, 0, rootg);
 				break;
 		}
 	}
