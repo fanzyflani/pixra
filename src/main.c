@@ -14,6 +14,7 @@ int tool_palidx = 0;
 
 widget_t *g_img = NULL;
 widget_t *g_pal = NULL;
+widget_t *g_cpick = NULL;
 
 int mouse_x = 0;
 int mouse_y = 0;
@@ -88,6 +89,7 @@ int main(int argc, char *argv[])
 	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);
 	g_img = widget_new(rootg, W_IMG_X1, W_IMG_Y1, W_IMG_X2 - W_IMG_X1, W_IMG_Y2 - W_IMG_Y1, w_img_init);
 	g_pal = widget_new(rootg, W_PAL_X1, W_PAL_Y1, W_PAL_X2 - W_PAL_X1, W_PAL_Y2 - W_PAL_Y1, w_pal_init);
+	g_cpick = widget_new(NULL, 0, 0, 512+2*4, 20*3+4*4, w_cpick_init);
 
 	// Main loop!
 	mainloop();

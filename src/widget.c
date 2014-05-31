@@ -148,6 +148,93 @@ widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f
 }
 
 //
+// COLOUR PICKER WIDGET
+//
+static void w_cpick_draw(widget_t *g, int sx, int sy)
+{
+	int x, y;
+
+	draw_rect32(sx, sy, sx + g->w-1, sy + g->h-1, rgb32(85, 85, 85));
+
+	for(y = 0; y < 3; y++)
+	for(x = 0; x < 256; x++)
+	{
+		// NOTE: could be faster - this is a kinda slow call!
+		// Hmm, perhaps we could prep an image for this?
+
+		draw_rect32(
+			sx +  2*x + 4,
+			sy + 24*y + 4,
+			sx +  2*x + 5,
+			sy + 24*y + 23,
+			0xFF000000 | (x<<(y<<3)));
+	}
+
+}
+
+static void w_cpick_pack(widget_t *g, int w, int h)
+{
+	// TODO: Sort this out properly
+	g->w = 512+2*4;
+	g->h = 20*3+4*4;
+}
+
+static void w_cpick_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
+{
+	if(bail)
+		widget_reparent(NULL, g);
+}
+
+static void w_cpick_mouse_button(widget_t *g, int mx, int my, int button, int state)
+{
+	if(!state) return;
+	if(button != 0) return;
+
+	// Widget -> Colour mapping
+	mx -= 4;
+	my -= 4;
+
+	if((my % 24) >= 20) return;
+
+	mx /= 2;
+	my /= 24;
+	if(mx < 0 || mx >= 256) return;
+	if(my < 0 || my >= 3) return;
+
+	// Change colour
+	uint32_t *pp = &rootimg->pal[tool_palidx];
+	switch(my)
+	{
+		case 0:
+			*pp = (*pp & ~0x000000FF) | mx;
+			rootimg->dirty = 1;
+			break;
+
+		case 1:
+			*pp = (*pp & ~0x0000FF00) | (mx<<8);
+			rootimg->dirty = 1;
+			break;
+
+		case 2:
+			*pp = (*pp & ~0x00FF0000) | (mx<<16);
+			rootimg->dirty = 1;
+			break;
+	}
+
+}
+
+widget_t *w_cpick_init(widget_t *g)
+{
+	//
+	g->f_draw = w_cpick_draw;
+	g->f_pack = w_cpick_pack;
+	g->f_mouse_button = w_cpick_mouse_button;
+	g->f_mouse_motion = w_cpick_mouse_motion;
+
+	return g;
+}
+
+//
 // PALETTE WIDGET
 //
 static void w_pal_draw(widget_t *g, int sx, int sy)
@@ -177,12 +264,31 @@ static void w_pal_pack(widget_t *g, int w, int h)
 
 static void w_pal_mouse_button(widget_t *g, int mx, int my, int button, int state)
 {
-	if(!state) return;
-	if(button != 0) return;
-
 	// Widget -> Palette mapping
-	tool_palidx = (mx>>4) + ((my>>4)<<3);
+	int idx = (mx>>4) + ((my>>4)<<3);
 
+	// Check type
+	if(button == 0 && state)
+	{
+		// LMB down: Set palette
+		tool_palidx = idx;
+	} else if(button == 2 && !state) {
+		// RMB up: Change colour
+
+		// Set cpick position
+		g_cpick->x = g->x + mx - 4;
+		g_cpick->y = g->y + my - 4;
+
+		// Move if touching offscreen
+		if(g_cpick->x < 0) { g_cpick->x = 0; }
+		if(g_cpick->y < 0) { g_cpick->y = 0; }
+		if(g_cpick->x + g_cpick->w > screen->w) { g_cpick->x = screen->w - g_cpick->w; }
+		if(g_cpick->y + g_cpick->h > screen->h) { g_cpick->y = screen->h - g_cpick->h; }
+
+		// Reparent
+		widget_reparent(rootg, g_cpick);
+
+	}
 }
 
 widget_t *w_pal_init(widget_t *g)
@@ -361,6 +467,8 @@ widget_t *w_img_init(widget_t *g)
 
 	return g;
 }
+
+
 
 //
 // DESKTOP CONTAINER WIDGET

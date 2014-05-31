@@ -106,7 +106,7 @@ struct widget
 #define W_IMG_Y2 EJUSTY(12)
 
 #define W_PAL_X1 0
-#define W_PAL_Y1 12
+#define W_PAL_Y1 0
 #define W_PAL_X2 (0+128)
 #define W_PAL_Y2 (12+512)
 
@@ -135,6 +135,7 @@ int widget_mouse_button(int x, int y, int button, int state, widget_t *g);
 int widget_mouse_button_sdl(SDL_Event *ev, int bx, int by, widget_t *g);
 void widget_free(widget_t *g);
 widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f_init)(widget_t *g));
+widget_t *w_cpick_init(widget_t *g);
 widget_t *w_pal_init(widget_t *g);
 widget_t *w_img_init(widget_t *g);
 widget_t *w_desk_init(widget_t *g);
@@ -142,7 +143,11 @@ widget_t *w_desk_init(widget_t *g);
 // main.c
 extern SDL_Surface *screen;
 extern img_t *rootimg;
+extern widget_t *rootg;
 extern int tool_palidx;
 extern int mouse_x;
 extern int mouse_y;
+extern widget_t *g_img;
+extern widget_t *g_pal;
+extern widget_t *g_cpick;
 
