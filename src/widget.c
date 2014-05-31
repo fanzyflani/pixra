@@ -307,6 +307,7 @@ widget_t *w_pal_init(widget_t *g)
 //
 static void w_img_draw(widget_t *g, int sx, int sy)
 {
+	draw_rect32(sx, sy, sx+g->w-1, sy+g->h-1, rgb32(0x22, 0x22, 0x22));
 	draw_img(rootimg, rootimg->zoom,
 		rootimg->zx, rootimg->zy,
 		sx, sy,
