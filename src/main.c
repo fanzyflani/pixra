@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	rootimg = NULL;
 	if(rootimg == NULL) rootimg = img_load_tga(fname);
 	if(rootimg == NULL) rootimg = img_new(w, h);
-	rootimg->fname = fname;
+	if(rootimg->fname == NULL) rootimg->fname = strdup(fname);
 
 	// Set up GUI
 	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);

@@ -13,6 +13,15 @@ uint16_t io_get2le(FILE *fp)
 	return (v1<<8)|v0;
 }
 
+void io_put2le(int v, FILE *fp)
+{
+	int v0 = v&255;
+	int v1 = (v>>8)&255;
+
+	fputc(v0, fp);
+	fputc(v1, fp);
+}
+
 void img_undirty(img_t *img)
 {
 	int i, j;
@@ -218,14 +227,14 @@ img_t *img_load_tga(const char *fname)
 
 	// Create image
 	img_t *img = img_new(iw, ih);
-	img->fname = fname;
+	img->fname = strdup(fname);
 
 	// Load palette
 	for(i = 0; i < cmaplen; i++)
 	{
-		r = fgetc(fp);
-		g = fgetc(fp);
 		b = fgetc(fp);
+		g = fgetc(fp);
+		r = fgetc(fp);
 
 		img->pal[i] = rgb32(r, g, b);
 	}
@@ -233,6 +242,9 @@ img_t *img_load_tga(const char *fname)
 	// Clear remainder of palette
 	for(; i < 256; i++)
 		img->pal[i] = rgb32(0, 0, 0);
+	
+	// Load image
+	fread(img->data, img->w, img->h, fp);
 
 	// Flip if origin on bottom
 	if((idesc & 0x20) == 0)
@@ -253,12 +265,54 @@ img_t *img_load_tga(const char *fname)
 
 int img_save_tga(const char *fname, img_t *img)
 {
+	FILE *fp;
+	int x, y, i;
+
+	// Check to see if we actually HAVE a filename
 	if(fname == NULL)
 	{
 		fprintf(stderr, "img_save_tga: filename not set\n");
 		return 1;
 	}
 
-	printf("TODO: Save Image\n");
-	return 1;
+	// Open file for writing
+	fp = fopen(fname, "wb");
+	if(fp == NULL)
+	{
+		perror("img_save_tga(fopen)");
+		return 1;
+	}
+
+	// Header
+	fputc(0, fp); // idlen
+	fputc(1, fp); // cmaptyp
+	fputc(1, fp); // datatyp
+	io_put2le(0, fp); // cmapbeg
+	io_put2le(256, fp); // cmaplen
+	fputc(24, fp); // cmapbpp
+	io_put2le(0, fp); // ix
+	io_put2le(img->h, fp); // iy
+	io_put2le(img->w, fp); // iw
+	io_put2le(img->h, fp); // ih
+	fputc(8, fp); // ibpp
+	fputc(0x20, fp); // idesc
+
+	// Palette
+	for(i = 0; i < 256; i++)
+	{
+		uint32_t c = img->pal[i];
+
+		fputc((c>>0)&0xFF, fp);
+		fputc((c>>8)&0xFF, fp);
+		fputc((c>>16)&0xFF, fp);
+	}
+
+	// Image data
+	printf("writing data %i %i\n", img->w, img->h);
+	fwrite(img->data, img->w, img->h, fp);
+
+	// Close + return
+	fclose(fp);
+	printf("Image saved to \"%s\"\n", fname);
+	return 0;
 }
