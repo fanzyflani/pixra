@@ -323,7 +323,8 @@ static void w_img_pack(widget_t *g, int w, int h)
 static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int state)
 {
 	if(!state) return;
-	if(button != 0)
+
+	if(button != 0 && button != 2)
 	{
 		// Calculate old zoom info
 		int lzoom = rootimg->zoom;
@@ -370,11 +371,20 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 	
 	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
 
-	// Put a pixel somewhere
-	if(x >= 0 && y >= 0 && x < rootimg->w && y < rootimg->h)
+	if(button == 0)
 	{
-		*IMG8(rootimg, x, y) = tool_palidx;
-		rootimg->dirty = 1; // TODO: Several "dirty" flags
+		// Put a pixel somewhere
+		if(x >= 0 && y >= 0 && x < rootimg->w && y < rootimg->h)
+		{
+			*IMG8(rootimg, x, y) = tool_palidx;
+			rootimg->dirty = 1; // TODO: Several "dirty" flags
+		}
+
+	} else if(button == 2) {
+		// Get a pixel from somewhere
+		if(x >= 0 && y >= 0 && x < rootimg->w && y < rootimg->h)
+			tool_palidx = *IMG8(rootimg, x, y);
+
 	}
 }
 
