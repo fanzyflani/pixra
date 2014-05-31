@@ -230,16 +230,16 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
 
 	// Put a pixel somewhere
-	*IMG8(rootimg, x, y) = tool_palidx;
-	rootimg->dirty = 1; // TODO: Several "dirty" flags
-
+	if(x >= 0 && y >= 0 && x < rootimg->w && y < rootimg->h)
+	{
+		*IMG8(rootimg, x, y) = tool_palidx;
+		rootimg->dirty = 1; // TODO: Several "dirty" flags
+	}
 }
 
-static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
+static void w_img_mouse_motion_lmb(widget_t *g, int mx, int my, int dx, int dy, int bail)
 {
 	int i;
-
-	if((buttons & 1) == 0) return;
 
 	int x = mx;
 	int y = my;
@@ -273,18 +273,83 @@ static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int 
 
 		int dc = dcx-dcy;
 
-		printf("%i %i\n", dcx, dcy);
 		for(i = 0; i < dcx+dcy; i++)
 		{
 			// Advance counter
 			if(dc >= 0) { dc -= dcy; lx += dsx; }
 			else /* */ { dc += dcx; ly += dsy; }
 
-			*IMG8(rootimg, lx, ly) = tool_palidx;
+			if(lx >= 0 && ly >= 0 && lx < rootimg->w && ly < rootimg->h)
+				*IMG8(rootimg, lx, ly) = tool_palidx;
 		}
 
 		rootimg->dirty = 1; // TODO: Several "dirty" flags
 	}
+
+	// If bailing, warp the mouse
+	// TODO: Make this trigger BEFORE the border
+	if(bail)
+	{
+		// Get image position
+		int mdx = (mx >= (g->w>>1) ? -1 : 1) * (g->w>>1);
+		int mdy = (my >= (g->h>>1) ? -1 : 1) * (g->h>>1);
+		mdx /= rootimg->zoom;
+		mdy /= rootimg->zoom;
+
+		// TODO: Clamp to image bounds
+
+		// Move image and warp mouse
+		rootimg->zx -= mdx;
+		rootimg->zy -= mdy;
+		SDL_WarpMouse(mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
+	}
+}
+
+static void w_img_mouse_motion_mmb(widget_t *g, int mx, int my, int dx, int dy, int bail)
+{
+	int x = mx;
+	int y = my;
+	int lx = x - dx;
+	int ly = y - dy;
+
+	// Widget -> Image mapping
+	x /= rootimg->zoom;
+	y /= rootimg->zoom;
+	x += rootimg->zx;
+	y += rootimg->zy;
+
+	// Widget -> Image mapping for old position
+	lx /= rootimg->zoom;
+	ly /= rootimg->zoom;
+	lx += rootimg->zx;
+	ly += rootimg->zy;
+
+	// Scroll
+	rootimg->zx -= x - lx;
+	rootimg->zy -= y - ly;
+
+	// If bailing, warp the mouse
+	// TODO: Make this trigger BEFORE the border
+	if(bail)
+	{
+		// Get image position
+		int mdx = (mx >= (g->w>>1) ? -1 : 1) * (g->w>>1);
+		int mdy = (my >= (g->h>>1) ? -1 : 1) * (g->h>>1);
+		mdx /= rootimg->zoom;
+		mdy /= rootimg->zoom;
+
+		// TODO: Clamp to image bounds
+
+		// Warp mouse
+		SDL_WarpMouse(mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
+	}
+
+}
+
+static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
+{
+	if((buttons & 1) != 0) return w_img_mouse_motion_lmb(g, mx, my, dx, dy, bail);
+	if((buttons & 2) != 0) return w_img_mouse_motion_mmb(g, mx, my, dx, dy, bail);
 }
 
 widget_t *w_img_init(widget_t *g)

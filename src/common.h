@@ -102,8 +102,8 @@ struct widget
 
 #define W_IMG_X1 132
 #define W_IMG_Y1 12
-#define W_IMG_X2 EJUSTX(0)
-#define W_IMG_Y2 EJUSTY(0)
+#define W_IMG_X2 EJUSTX(12)
+#define W_IMG_Y2 EJUSTY(12)
 
 #define W_PAL_X1 0
 #define W_PAL_Y1 12
@@ -143,4 +143,6 @@ widget_t *w_desk_init(widget_t *g);
 extern SDL_Surface *screen;
 extern img_t *rootimg;
 extern int tool_palidx;
+extern int mouse_x;
+extern int mouse_y;
 

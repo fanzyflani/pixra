@@ -15,6 +15,9 @@ int tool_palidx = 0;
 widget_t *g_img = NULL;
 widget_t *g_pal = NULL;
 
+int mouse_x = 0;
+int mouse_y = 0;
+
 void mainloop_draw(void)
 {
 	// Clear screen
@@ -52,11 +55,15 @@ void mainloop(void)
 				break;
 
 			case SDL_MOUSEMOTION:
+				mouse_x = ev.motion.x;
+				mouse_y = ev.motion.y;
 				widget_mouse_motion_sdl(&ev, 0, 0, rootg);
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
+				mouse_x = ev.button.x;
+				mouse_y = ev.button.y;
 				widget_mouse_button_sdl(&ev, 0, 0, rootg);
 				break;
 		}
