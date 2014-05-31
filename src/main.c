@@ -22,8 +22,7 @@ void mainloop_draw(void)
 	memset(screen->pixels, 0, screen->pitch * screen->h);
 
 	// Draw stuff
-	g_img->f_draw(g_img, g_img->x, g_img->y);
-	g_pal->f_draw(g_pal, g_pal->x, g_pal->y);
+	rootg->f_draw(rootg, rootg->x, rootg->y);
 
 	// Blit
 	SDL_UnlockSurface(screen);
@@ -55,8 +54,7 @@ void mainloop(void)
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
 				0
-				|| widget_mouse_button(&ev, 0, 0, g_pal)
-				|| widget_mouse_button(&ev, 0, 0, g_img)
+				|| widget_mouse_button_sdl(&ev, 0, 0, rootg)
 				;
 				break;
 		}
@@ -78,8 +76,9 @@ int main(int argc, char *argv[])
 
 	// Set stuff up
 	rootimg = img_new(400, 300);
-	g_pal = widget_new(NULL, W_PAL_X1, W_PAL_Y1, W_PAL_X2 - W_PAL_X1, W_PAL_Y2 - W_PAL_Y1, w_pal_init);
-	g_img = widget_new(NULL, W_IMG_X1, W_IMG_Y1, W_IMG_X2 - W_IMG_X1, W_IMG_Y2 - W_IMG_Y1, w_img_init);
+	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);
+	g_img = widget_new(rootg, W_IMG_X1, W_IMG_Y1, W_IMG_X2 - W_IMG_X1, W_IMG_Y2 - W_IMG_Y1, w_img_init);
+	g_pal = widget_new(rootg, W_PAL_X1, W_PAL_Y1, W_PAL_X2 - W_PAL_X1, W_PAL_Y2 - W_PAL_Y1, w_pal_init);
 
 	// Main loop!
 	mainloop();

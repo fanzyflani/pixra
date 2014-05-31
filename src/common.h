@@ -129,11 +129,13 @@ img_t *img_new(int w, int h);
 
 // widget.c
 void widget_reparent(widget_t *parent, widget_t *child);
-int widget_mouse_button(SDL_Event *ev, int bx, int by, widget_t *g);
+int widget_mouse_button(int x, int y, int button, int state, widget_t *g);
+int widget_mouse_button_sdl(SDL_Event *ev, int bx, int by, widget_t *g);
 void widget_free(widget_t *g);
 widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f_init)(widget_t *g));
 widget_t *w_pal_init(widget_t *g);
 widget_t *w_img_init(widget_t *g);
+widget_t *w_desk_init(widget_t *g);
 
 // main.c
 extern SDL_Surface *screen;

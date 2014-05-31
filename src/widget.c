@@ -22,19 +22,22 @@ void widget_reparent(widget_t *parent, widget_t *child)
 	if(parent == NULL)
 	{
 		child->sibn = NULL;
+
 	} else {
 		child->sibn = parent->child;
+
+		if(parent->child != NULL)
+			parent->child->sibp = child;
+
 		parent->child = child;
 	}
 }
 
-int widget_mouse_button(SDL_Event *ev, int bx, int by, widget_t *g)
+int widget_mouse_button(int x, int y, int button, int state, widget_t *g)
 {
-	int x = ev->button.x - bx - g->x;
-	int y = ev->button.y - by - g->y;
-	int button = ev->button.button - 1;
-	int state = (ev->type == SDL_MOUSEBUTTONDOWN ? 1 : 0);
-	
+	x -= g->x;
+	y -= g->y;
+
 	if(x < 0 || y < 0 || x >= g->w || y >= g->h)
 		return 0;
 
@@ -42,6 +45,16 @@ int widget_mouse_button(SDL_Event *ev, int bx, int by, widget_t *g)
 		g->f_mouse_button(g, x, y, button, state);
 
 	return 1;
+}
+
+int widget_mouse_button_sdl(SDL_Event *ev, int bx, int by, widget_t *g)
+{
+	int x = ev->button.x - bx;
+	int y = ev->button.y - by;
+	int button = ev->button.button - 1;
+	int state = (ev->type == SDL_MOUSEBUTTONDOWN ? 1 : 0);
+
+	return widget_mouse_button(x, y, button, state, g);
 }
 
 // WARNING: Frees children as well!
@@ -186,10 +199,58 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 
 widget_t *w_img_init(widget_t *g)
 {
-	//
 	g->f_draw = w_img_draw;
 	g->f_pack = w_img_pack;
 	g->f_mouse_button = w_img_mouse_button;
+
+	return g;
+}
+
+//
+// DESKTOP CONTAINER WIDGET
+//
+static void w_desk_draw(widget_t *g, int sx, int sy)
+{
+	widget_t *child;
+
+	// Try to obtain child
+	child = g->child;
+	if(child == NULL)
+		return;
+
+	// Move to end of list
+	while(child->sibn != NULL)
+		child = child->sibn;
+
+	// Traverse children BTF
+	for(; child != NULL; child = child->sibp)
+	{
+		if(child->f_draw != NULL)
+			child->f_draw(child, sx + child->x, sy + child->y);
+	}
+}
+
+static void w_desk_pack(widget_t *g, int w, int h)
+{
+	g->w = w;
+	g->h = h;
+}
+
+static void w_desk_mouse_button(widget_t *g, int mx, int my, int button, int state)
+{
+	widget_t *child;
+
+	// Traverse children
+	for(child = g->child; child != NULL; child = child->sibn)
+		if(widget_mouse_button(mx, my, button, state, child))
+			return;
+}
+
+widget_t *w_desk_init(widget_t *g)
+{
+	g->f_draw = w_desk_draw;
+	g->f_pack = w_desk_pack;
+	g->f_mouse_button = w_desk_mouse_button;
 
 	return g;
 }
