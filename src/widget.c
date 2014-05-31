@@ -237,12 +237,14 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 
 static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
 {
+	int i;
+
 	if((buttons & 1) == 0) return;
 
 	int x = mx;
 	int y = my;
-	int lx = x + dx;
-	int ly = y + dy;
+	int lx = x - dx;
+	int ly = y - dy;
 
 	// Widget -> Image mapping
 	x /= rootimg->zoom;
@@ -259,9 +261,28 @@ static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int 
 	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
 
 	// Put a pixel somewhere
-	if(lx != x && ly != y)
+	if(lx != x || ly != y)
 	{
-		*IMG8(rootimg, x, y) = tool_palidx;
+		// Prepare line variables
+		int dcx = x - lx;
+		int dcy = y - ly;
+		int dsx = (dcx < 0 ? -1 : 1);
+		int dsy = (dcy < 0 ? -1 : 1);
+		dcx *= dsx;
+		dcy *= dsy;
+
+		int dc = dcx-dcy;
+
+		printf("%i %i\n", dcx, dcy);
+		for(i = 0; i < dcx+dcy; i++)
+		{
+			// Advance counter
+			if(dc >= 0) { dc -= dcy; lx += dsx; }
+			else /* */ { dc += dcx; ly += dsy; }
+
+			*IMG8(rootimg, lx, ly) = tool_palidx;
+		}
+
 		rootimg->dirty = 1; // TODO: Several "dirty" flags
 	}
 }
