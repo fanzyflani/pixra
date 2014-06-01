@@ -60,6 +60,20 @@ void handle_key(int key, int state)
 				img_save_tga(rootimg->fname, rootimg);
 
 			break;
+
+		case SDLK_l:
+			if((key_mods & KM_CTRL))
+			{
+				img_t *img = img_load_tga(rootimg->fname);
+
+				if(img != NULL)
+				{
+					img_free(rootimg);
+					rootimg = img;
+				}
+			}
+
+			break;
 	}
 }
 
@@ -67,7 +81,6 @@ void mainloop(void)
 {
 	SDL_Event ev;
 	int quitflag = 0;
-	int x, y, i;
 
 	while(quitflag == 0)
 	{

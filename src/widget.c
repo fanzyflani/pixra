@@ -335,12 +335,12 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 		// Check scroll wheels
 		if(button == 4)
 		{
-			rootimg->zoom++;
+			rootimg->zoom *= 2;
 			if(rootimg->zoom > 64)
 				rootimg->zoom = 64;
 
 		} else if(button == 3) {
-			rootimg->zoom--;
+			rootimg->zoom /= 2;
 			if(rootimg->zoom < 1)
 				rootimg->zoom = 1;
 		}

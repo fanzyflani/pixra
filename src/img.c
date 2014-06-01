@@ -47,6 +47,8 @@ void img_free(img_t *img)
 	if(img->fname != NULL) free(img->fname);
 
 	// TODO: Undo stack
+	if(img->undo_top != NULL) fprintf(stderr, "LEAK: img->undo_top!\n");
+	if(img->undo_bottom != NULL) fprintf(stderr, "LEAK: img->undo_bottom!\n");
 
 	// Free image
 	free(img);
@@ -54,8 +56,7 @@ void img_free(img_t *img)
 
 img_t *img_new(int w, int h)
 {
-	int x, y, i;
-
+	int i;
 	img_t *img = malloc(sizeof(img_t));
 
 	// Image stuff
@@ -179,6 +180,11 @@ img_t *img_load_tga(const char *fname)
 	uint8_t ibpp = fgetc(fp);
 	uint8_t idesc = fgetc(fp);
 
+	// Shut the compiler up
+	(void)ix;
+	(void)iy;
+	(void)cmapbeg;
+
 	// Check if this image is supported
 	if(datatyp != 1)
 	{
@@ -266,7 +272,7 @@ img_t *img_load_tga(const char *fname)
 int img_save_tga(const char *fname, img_t *img)
 {
 	FILE *fp;
-	int x, y, i;
+	int i;
 
 	// Check to see if we actually HAVE a filename
 	if(fname == NULL)

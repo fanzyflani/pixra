@@ -3,11 +3,15 @@
 
 # final binaries
 pixra
+pixra.exe
+
+# images
+*.tga
 
 # admission that i'm not actually perfect
 *.core
 
-# windows build crap (not supported yet)
+# windows build crap
 winlibs/
 *.dll
 
@@ -36,4 +40,5 @@ gmon.out
 
 # build stuff
 build/*
+wbuild/*
 
