@@ -294,12 +294,60 @@ widget_t *w_pal_init(widget_t *g)
 //
 static void w_img_draw(widget_t *g, int sx, int sy)
 {
+	int x, y;
+
+	// Draw background
 	draw_rect32(sx, sy, sx+g->w-1, sy+g->h-1, rgb32(0x22, 0x22, 0x22));
+
+	// Draw image
 	draw_img(rootimg, rootimg->zoom,
 		rootimg->zx, rootimg->zy,
 		sx, sy,
 		g->w/rootimg->zoom,
 		g->h/rootimg->zoom);
+	
+	// Draw corner #1
+	if(tool_cx1 != -1)
+	{
+		x = (tool_cx1 - rootimg->zx) * rootimg->zoom - 1;
+		y = (tool_cy1 - rootimg->zy) * rootimg->zoom - 1;
+		if(tool_cx1 > tool_cx2) x += rootimg->zoom+1;
+		if(tool_cy1 > tool_cy2) y += rootimg->zoom+1;
+
+		if(x >= 0 && y >= 0 && x < g->w && y < g->h)
+		{
+			draw_rect32(
+				sx + x, sy,
+				sx + x, sy + g->h-1,
+				rgb32(0x00,0x80,0xFF));
+			draw_rect32(
+				sx, /******/ sy + y,
+				sx + g->w-1, sy + y,
+				rgb32(0x00,0x80,0xFF));
+		}
+	}
+
+	// Draw corner #2
+	if(tool_cx1 != -1)
+	{
+		x = (tool_cx2 - rootimg->zx) * rootimg->zoom - 1;
+		y = (tool_cy2 - rootimg->zy) * rootimg->zoom - 1;
+		if(tool_cx2 >= tool_cx1) x += rootimg->zoom+1;
+		if(tool_cy2 >= tool_cy1) y += rootimg->zoom+1;
+
+		if(x >= 0 && y >= 0 && x < g->w && y < g->h)
+		{
+			draw_rect32(
+				sx + x, sy,
+				sx + x, sy + g->h-1,
+				rgb32(0xFF,0x80,0x00));
+			draw_rect32(
+				sx, /******/ sy + y,
+				sx + g->w-1, sy + y,
+				rgb32(0xFF,0x80,0x00));
+		}
+	}
+
 }
 
 static void w_img_pack(widget_t *g, int w, int h)
@@ -311,6 +359,36 @@ static void w_img_pack(widget_t *g, int w, int h)
 static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int state)
 {
 	if(!state) return;
+
+	int x = mx;
+	int y = my;
+
+	// Widget -> Image mapping
+	x /= rootimg->zoom;
+	y /= rootimg->zoom;
+	x += rootimg->zx;
+	y += rootimg->zy;
+	
+	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
+
+	if(key_mods_drag)
+	{
+		if((key_mods_drag & KM_SHIFT) && !(key_mods_drag & ~KM_SHIFT))
+		{
+			// Set corner
+			if(button == 0)
+			{
+				tool_cx1 = x;
+				tool_cy1 = y;
+			} else if(button == 2) {
+				tool_cx2 = x;
+				tool_cy2 = y;
+			}
+
+		}
+
+		return;
+	}
 
 	if(button != 0 && button != 2)
 	{
@@ -348,17 +426,6 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 		return;
 	}
 
-	int x = mx;
-	int y = my;
-
-	// Widget -> Image mapping
-	x /= rootimg->zoom;
-	y /= rootimg->zoom;
-	x += rootimg->zx;
-	y += rootimg->zy;
-	
-	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
-
 	if(button == 0)
 	{
 		// Put a pixel somewhere
@@ -374,6 +441,53 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 			tool_palidx = *IMG8(rootimg, x, y);
 
 	}
+}
+
+static void w_img_mouse_motion_shift(widget_t *g, int mx, int my, int dx, int dy, int button, int bail)
+{
+	int x = mx;
+	int y = my;
+
+	// Widget -> Image mapping
+	x /= rootimg->zoom;
+	y /= rootimg->zoom;
+	x += rootimg->zx;
+	y += rootimg->zy;
+	
+	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
+
+	// Set corner
+	if(button == 0)
+	{
+		tool_cx1 = x;
+		tool_cy1 = y;
+	} else if(button == 2) {
+		tool_cx2 = x;
+		tool_cy2 = y;
+	}
+
+
+	// If bailing, warp the mouse
+	// TODO: Make this trigger BEFORE the border
+	// TODO REFACTOR THIS SO IT'S NOT DUPLICATED EVERYWHERE
+	if(bail)
+	{
+		// Get image position
+		int mdx = (mx >= g->w ? -1 : (mx < 0 ? 1 : 0)) * ((g->w>>1) / rootimg->zoom);
+		int mdy = (my >= g->h ? -1 : (my < 0 ? 1 : 0)) * ((g->h>>1) / rootimg->zoom);
+
+		// Move image
+		rootimg->zx -= mdx;
+		rootimg->zy -= mdy;
+
+		// Fixes a bug with the left/top edges breaking
+		if(mdx > 0) mdx++;
+		if(mdy > 0) mdy++;
+
+		// Move mouse
+		SDL_WarpMouse(mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
+	}
+
 }
 
 static void w_img_mouse_motion_lmb(widget_t *g, int mx, int my, int dx, int dy, int bail)
@@ -489,8 +603,14 @@ static void w_img_mouse_motion_mmb(widget_t *g, int mx, int my, int dx, int dy, 
 
 static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
 {
-	if((buttons & 1) != 0) return w_img_mouse_motion_lmb(g, mx, my, dx, dy, bail);
-	if((buttons & 2) != 0) return w_img_mouse_motion_mmb(g, mx, my, dx, dy, bail);
+	if(!key_mods_drag)
+	{
+		if((buttons & 1) != 0) return w_img_mouse_motion_lmb(g, mx, my, dx, dy, bail);
+		if((buttons & 2) != 0) return w_img_mouse_motion_mmb(g, mx, my, dx, dy, bail);
+	} else if((key_mods_drag & KM_SHIFT) && !(key_mods_drag & ~KM_SHIFT)) {
+		if((buttons & 1) != 0) return w_img_mouse_motion_shift(g, mx, my, dx, dy, 0, bail);
+		if((buttons & 4) != 0) return w_img_mouse_motion_shift(g, mx, my, dx, dy, 2, bail);
+	}
 }
 
 widget_t *w_img_init(widget_t *g)

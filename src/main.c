@@ -11,6 +11,12 @@ widget_t *rootg = NULL;
 
 // TODO: refactor
 int tool_palidx = 0;
+int tool_cx1 = -1;
+int tool_cy1 = -1;
+int tool_cx2 = -1;
+int tool_cy2 = -1;
+int tool_pe1 = -1;
+int tool_pe2 = -1;
 
 widget_t *g_img = NULL;
 widget_t *g_pal = NULL;
@@ -20,6 +26,7 @@ int key_mods = 0;
 int key_mods_drag = 0;
 int mouse_x = 0;
 int mouse_y = 0;
+int mouse_b = 0;
 
 void mainloop_draw(void)
 {
@@ -50,6 +57,9 @@ void handle_key(int key, int state)
 	if(state) key_mods |=  maskset;
 	else /**/ key_mods &= ~maskset;
 
+	// Update drag modifiers if no mouse buttons held
+	if(mouse_b == 0) key_mods_drag = key_mods;
+
 	// Do other keys
 	if(maskset != 0) return;
 
@@ -58,13 +68,17 @@ void handle_key(int key, int state)
 	{
 		case SDLK_s:
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			{
+				// Save
 				img_save_tga(rootimg->fname, rootimg);
+			}
 
 			break;
 
 		case SDLK_l:
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 			{
+				// Load
 				img_t *img = img_load_tga(rootimg->fname);
 
 				if(img != NULL)
@@ -79,6 +93,7 @@ void handle_key(int key, int state)
 		case SDLK_c:
 			if(!key_mods)
 			{
+				// Colour picker window
 				if(g_cpick->parent == NULL)
 				{
 					// Set cpick position
@@ -97,6 +112,11 @@ void handle_key(int key, int state)
 					// Deparent
 					widget_reparent(NULL, g_cpick);
 				}
+
+			} else if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL)) {
+				// Copy
+				// TODO!
+
 			}
 
 			break;
@@ -131,15 +151,32 @@ void mainloop(void)
 				break;
 
 			case SDL_MOUSEMOTION:
+				// Update mouse_[xy]
 				mouse_x = ev.motion.x;
 				mouse_y = ev.motion.y;
+
+				// Call
 				widget_mouse_motion_sdl(&ev, 0, 0, rootg);
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
+				// Update mouse_b button bitmask (IF NOT SCROLLWHEEL)
+				if(ev.button.button-1 == 3 || ev.button.button-1 == 4)
+					;
+				else if(ev.type == SDL_MOUSEBUTTONDOWN)
+					mouse_b |= 1<<(ev.button.button-1);
+				else
+					mouse_b &= ~(1<<(ev.button.button-1));
+
+				// Update drag mods if we now have no buttons down
+				if(mouse_b == 0) key_mods_drag = key_mods;
+
+				// Update mouse_[xy]
 				mouse_x = ev.button.x;
 				mouse_y = ev.button.y;
+
+				// Call
 				widget_mouse_button_sdl(&ev, 0, 0, rootg);
 				break;
 		}

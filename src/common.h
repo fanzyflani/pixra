@@ -156,11 +156,20 @@ widget_t *w_desk_init(widget_t *g);
 extern SDL_Surface *screen;
 extern img_t *rootimg;
 extern widget_t *rootg;
+
 extern int tool_palidx;
+extern int tool_cx1;
+extern int tool_cy1;
+extern int tool_cx2;
+extern int tool_cy2;
+extern int tool_pe1;
+extern int tool_pe2;
+
 extern int key_mods;
 extern int key_mods_drag;
 extern int mouse_x;
 extern int mouse_y;
+extern int mouse_b;
 extern widget_t *g_img;
 extern widget_t *g_pal;
 extern widget_t *g_cpick;
