@@ -182,8 +182,10 @@ static void w_cpick_pack(widget_t *g, int w, int h)
 
 static void w_cpick_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
 {
+#if 0
 	if(bail)
 		widget_reparent(NULL, g);
+#endif
 }
 
 static void w_cpick_mouse_button(widget_t *g, int mx, int my, int button, int state)
@@ -274,22 +276,6 @@ static void w_pal_mouse_button(widget_t *g, int mx, int my, int button, int stat
 	{
 		// LMB down: Set palette
 		tool_palidx = idx;
-	} else if(button == 2 && !state) {
-		// RMB up: Change colour
-
-		// Set cpick position
-		g_cpick->x = g->x + mx - 4;
-		g_cpick->y = g->y + my - 4;
-
-		// Move if touching offscreen
-		if(g_cpick->x < 0) { g_cpick->x = 0; }
-		if(g_cpick->y < 0) { g_cpick->y = 0; }
-		if(g_cpick->x + g_cpick->w > screen->w) { g_cpick->x = screen->w - g_cpick->w; }
-		if(g_cpick->y + g_cpick->h > screen->h) { g_cpick->y = screen->h - g_cpick->h; }
-
-		// Reparent
-		widget_reparent(rootg, g_cpick);
-
 	}
 }
 

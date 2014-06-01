@@ -1,10 +1,30 @@
-TODO: actual readme.
+pixra (or "xra" for short) is an image editor designed specifically for the Raspberry Pi. It is designed to edit 256-colour (8bpp) images with a 24bpp palette, and dithers it so it looks nice for the Raspi's native depth of 16bpp.
 
-pixra (or "xra" for short) is an image editor designed specifically for the Raspberry Pi. It is the Lojban word for "picture", and the x is that pholegmy sound that doesn't show up in English, but does show up in German and various Middle-Eastern languages.
+"pixra" is the Lojban word for "picture", and the x is that pholegmy sound that doesn't show up in English, but does show up in German and various Middle-Eastern languages.
 
-It runs in a 16bpp video mode. If you think this will ever run in a higher pixel depth, think again.
+Just in case you were wondering.
 
-It is designed to edit 8bpp colour-indexed images with a 24bpp palette.
+Usage:
+- Keys (usable everywhere):
+  - C = Toggle colour select window
+  - Ctrl-L = Load image
+  - Ctrl-S = Save image
+  - (TODO) Ctrl-C = Copy image data
+  - (TODO) Ctrl-X = Cut image data, replacing with drawing colour
+  - (TODO) Ctrl-V = Paste image data
+  - (TODO) Ctrl-Shift-C = Copy palette data
+  - (TODO) Ctrl-Shift-V = Paste palette data
+  - (TODO) Ctrl-Shift-I = Interpolate palette data
+- Image window:
+  - Left Mouse Button: Draw with pencil
+  - Right Mouse Button: Pick drawing colour from the image
+  - Middle Mouse Button: Scroll the view
+  - Scroll Wheel: Zoom in/out ("pull" to zoom in, "push" to zoom out)
+  - (TODO) Shift + Left Mouse Button: Box select corner #1
+  - (TODO) Shift + Right Mouse Button: Box select corner #2
+- Palette window:
+  - Left Mouse Button: Pick drawing colour
+  - (TODO) Shift + Left Mouse Button: Range select inclusive end #1
+  - (TODO) Shift + Right Mouse Button: Range select inclusive end #2
 
-TODO: Actually make this an editor.
 

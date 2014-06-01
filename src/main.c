@@ -17,6 +17,7 @@ widget_t *g_pal = NULL;
 widget_t *g_cpick = NULL;
 
 int key_mods = 0;
+int key_mods_drag = 0;
 int mouse_x = 0;
 int mouse_y = 0;
 
@@ -56,13 +57,13 @@ void handle_key(int key, int state)
 	switch(key)
 	{
 		case SDLK_s:
-			if((key_mods & KM_CTRL))
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 				img_save_tga(rootimg->fname, rootimg);
 
 			break;
 
 		case SDLK_l:
-			if((key_mods & KM_CTRL))
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 			{
 				img_t *img = img_load_tga(rootimg->fname);
 
@@ -74,6 +75,32 @@ void handle_key(int key, int state)
 			}
 
 			break;
+
+		case SDLK_c:
+			if(!key_mods)
+			{
+				if(g_cpick->parent == NULL)
+				{
+					// Set cpick position
+					g_cpick->x = mouse_x - g_cpick->w/2;
+					g_cpick->y = mouse_y - g_cpick->h/2;
+
+					// Move if touching offscreen
+					if(g_cpick->x < 0) { g_cpick->x = 0; }
+					if(g_cpick->y < 0) { g_cpick->y = 0; }
+					if(g_cpick->x + g_cpick->w > screen->w) { g_cpick->x = screen->w - g_cpick->w; }
+					if(g_cpick->y + g_cpick->h > screen->h) { g_cpick->y = screen->h - g_cpick->h; }
+
+					// Reparent
+					widget_reparent(rootg, g_cpick);
+				} else {
+					// Deparent
+					widget_reparent(NULL, g_cpick);
+				}
+			}
+
+			break;
+
 	}
 }
 

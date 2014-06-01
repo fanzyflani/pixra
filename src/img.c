@@ -322,3 +322,4 @@ int img_save_tga(const char *fname, img_t *img)
 	printf("Image saved to \"%s\"\n", fname);
 	return 0;
 }
+
