@@ -90,6 +90,7 @@ struct widget
 	void (*f_mouse_pass)(widget_t *g, int focused);
 	void (*f_mouse_button)(widget_t *g, int mx, int my, int button, int state);
 	void (*f_mouse_motion)(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons);
+	void (*f_key)(widget_t *g, int sym, int chr, int state);
 	void *v1;
 };
 

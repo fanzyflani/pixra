@@ -143,6 +143,7 @@ widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f
 	g->f_mouse_pass = NULL;
 	g->f_mouse_button = NULL;
 	g->f_mouse_motion = NULL;
+	g->f_key = NULL;
 
 	return f_init(g);
 }
@@ -443,16 +444,18 @@ static void w_img_mouse_motion_lmb(widget_t *g, int mx, int my, int dx, int dy, 
 	if(bail)
 	{
 		// Get image position
-		int mdx = (mx >= 7*(g->w>>3) ? -1 : (mx <= (g->w>>3) ? 1 : 0)) * (g->w>>1);
-		int mdy = (my >= 7*(g->h>>3) ? -1 : (my <= (g->h>>3) ? 1 : 0)) * (g->h>>1);
-		mdx /= rootimg->zoom;
-		mdy /= rootimg->zoom;
+		int mdx = (mx >= g->w ? -1 : (mx < 0 ? 1 : 0)) * ((g->w>>1) / rootimg->zoom);
+		int mdy = (my >= g->h ? -1 : (my < 0 ? 1 : 0)) * ((g->h>>1) / rootimg->zoom);
 
-		// TODO: Clamp to image bounds
-
-		// Move image and warp mouse
+		// Move image
 		rootimg->zx -= mdx;
 		rootimg->zy -= mdy;
+
+		// Fixes a bug with the left/top edges breaking
+		if(mdx > 0) mdx++;
+		if(mdy > 0) mdy++;
+
+		// Move mouse
 		SDL_WarpMouse(mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
 	}
 }
