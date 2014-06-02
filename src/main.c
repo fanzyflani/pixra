@@ -305,6 +305,13 @@ void mainloop(void)
 	}
 }
 
+char newbie_fnbuf[2048] = "";
+char newbie_wbuf[7] = "320";
+char newbie_hbuf[7] = "200";
+int newbie_selidx = 0;
+int newbie_showmsg = 200;
+char newbie_msg[256] = "Enter filename (*.tga format), and if it doesn't exist, enter width and height";
+
 void newbieloop_draw(void)
 {
 	// Clear screen
@@ -312,14 +319,18 @@ void newbieloop_draw(void)
 	memset(screen->pixels, 0, screen->pitch * screen->h);
 
 	// Draw stuff
-	draw_printf(0, 0, 3, rgb16(255, 255, 255), "Hello! %i times zoom", 3);
-	draw_printf(0, 32, 2, rgb16(255, 255, 255), "This text is a placeholder for a \"main menu\".");
-	draw_printf(0, 48, 2, rgb16(255, 255, 255), "Read USAGE.md for info on how to use this");
-	draw_printf(0, 64, 2, rgb16(255, 255, 255), "from the commandline.");
-	draw_printf(0, 80, 2, rgb16(255, 255, 255), "Because the \"main menu\" just isn't *ready* yet.");
-	draw_printf(0, 100, 1, rgb16(255, 255, 255), "(Font finally has lowercase!)");
+#define NEWBIE_ISSEL(x) (newbie_selidx == (x) ? '>' : ' ')
+	draw_printf(0, 0, 2, rgb16(255, 255, 255), "%c File: %s_",NEWBIE_ISSEL(0), newbie_fnbuf);
+	draw_printf(0, 16, 2, rgb16(255, 255, 255), "%c Width: %s_", NEWBIE_ISSEL(1), newbie_wbuf);
+	draw_printf(0, 32, 2, rgb16(255, 255, 255), "%c Height: %s_", NEWBIE_ISSEL(2), newbie_hbuf);
+	draw_printf(0, 48, 2, rgb16(255, 255, 255), "%c OK", NEWBIE_ISSEL(3));
 
-	// TODO!
+	// Draw message if need be
+	if(newbie_showmsg > 0)
+	{
+		draw_printf(0, 80, 1, rgb16(255, 255, 255), "%s", newbie_msg);
+		newbie_showmsg--;
+	}
 
 	// Blit
 	SDL_UnlockSurface(screen);
@@ -348,9 +359,87 @@ int newbieloop(void)
 				break;
 
 			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				// TODO!
-				break;
+			switch(ev.key.keysym.sym)
+			{
+				case SDLK_UP:
+					newbie_selidx--;
+					if(newbie_selidx < 0)
+						newbie_selidx = 3;
+					break;
+
+				case SDLK_DOWN:
+					newbie_selidx++;
+					if(newbie_selidx > 3)
+						newbie_selidx = 0;
+					break;
+
+				case SDLK_BACKSPACE: {
+					if(newbie_selidx >= 3) break;
+
+					char *p = (newbie_selidx == 0 ? newbie_fnbuf
+						: newbie_selidx == 1 ? newbie_wbuf
+						: newbie_hbuf);
+					//int ml = (newbie_selidx == 0 ? 2048 : 7);
+					int cl = strlen(p);
+
+					if(cl != 0) p[cl-1] = '\x00';
+				} break;
+
+				case SDLK_RETURN: {
+					// Attempt to use the given args.
+
+					// Check filename for validity
+					if(strlen(newbie_fnbuf) == 0)
+					{
+						snprintf(newbie_msg, 255, "We need a filename! Type one in!");
+						newbie_msg[255] = '\x00';
+						newbie_showmsg = 200;
+						break;
+					}
+
+					// Now try LOADING
+					rootimg = img_load_tga(newbie_fnbuf);
+
+					if(rootimg != NULL)
+						return 0;
+
+					// Failing that, try CREATING
+					int w = atoi(newbie_wbuf);
+					int h = atoi(newbie_hbuf);
+
+					if(w < 1 || h < 1)
+					{
+						snprintf(newbie_msg, 255, "Invalid dimensions %i x %i", w, h);
+						newbie_msg[255] = '\x00';
+						newbie_showmsg = 200;
+						break;
+					}
+
+					rootimg = img_new(w, h);
+					rootimg->fname = strdup(newbie_fnbuf);
+					return 0;
+
+				} break;
+
+				default: {
+					if(newbie_selidx >= 3) break;
+
+					char *p = (newbie_selidx == 0 ? newbie_fnbuf
+						: newbie_selidx == 1 ? newbie_wbuf
+						: newbie_hbuf);
+					int ml = (newbie_selidx == 0 ? 2048 : 7);
+					int cl = strlen(p);
+
+					if(ev.key.keysym.unicode >= 32 && ev.key.keysym.unicode < 127)
+					{
+						if(cl+1 == ml) break;
+
+						p[cl] = (char)ev.key.keysym.unicode;
+						p[cl+1] = '\x00';
+					}
+
+				} break;
+			} break;
 
 			case SDL_MOUSEMOTION:
 				// TODO!
@@ -435,6 +524,7 @@ int main(int argc, char *argv[])
 
 	// Init SDL
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
+	SDL_EnableUNICODE(1);
 
 	// Correct SDL's stupid signal eating thing (who the hell hooks SIGTERM like that?!)
 	signal(SIGINT,  SIG_DFL);
