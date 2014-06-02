@@ -209,4 +209,39 @@ void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw
 	}
 }
 
+void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...)
+{
+	va_list va;
+	char buf[1024];
+
+	// Firstly, make sure we actually *have* a font loaded.
+	if(fontimg == NULL) return;
+
+	// Secondly, make sure dx, dy are in range.
+	if(dx + 8*zoom > screen->w || dy + 8*zoom > screen->h || dy < 0) return;
+
+	// Now format the string.
+	va_start(va, fmt);
+	vsnprintf(buf, 1023, fmt, va);
+	buf[1023] = '\x00';
+
+	// Finally, start drawing it.
+	// TODO: Support multiple colours!
+	uint8_t *cp = (uint8_t *)buf;
+	for(; *cp != '\x00' && dx + zoom*8 <= screen->w; cp++, dx += zoom*8)
+	{
+		// Check if X in range
+		if(dx < 0) continue;
+
+		// Get source char position
+		int sx = (*cp)&15;
+		int sy = (*cp)>>4;
+		sx <<= 3;
+		sy <<= 3;
+
+		// Draw
+		// TODO: Use a simpler routine
+		draw_img_trans(fontimg, zoom, sx, sy, dx, dy, 8, 8, 0);
+	}
+}
 

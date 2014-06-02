@@ -5,9 +5,15 @@ See LICENCE.txt for licensing information (TL;DR: MIT-style).
 
 #include "common.h"
 
+#ifdef WIN32
+// for MessageBox and MessageBox only
+#include <windows.h>
+#endif
+
 SDL_Surface *screen = NULL;
 img_t *rootimg = NULL;
 img_t *clipimg = NULL;
+img_t *fontimg = NULL;
 widget_t *rootg = NULL;
 
 // TODO: refactor
@@ -299,16 +305,28 @@ void mainloop(void)
 	}
 }
 
-// This needs to be created because some people don't know what a commandline is.
-// And by some people I mean about 90% of computer users.
-// XXX: Should this be in a different "launcher" program instead?
-#if 0
 void newbieloop_draw(void)
 {
+	// Clear screen
+	SDL_LockSurface(screen);
+	memset(screen->pixels, 0, screen->pitch * screen->h);
+
+	// Draw stuff
+	draw_printf(0, 0, 3, rgb16(255, 255, 255), "Hello! %i times zoom", 3);
+	draw_printf(0, 32, 2, rgb16(255, 255, 255), "This text is a placeholder for a \"main menu\".");
+	draw_printf(0, 48, 2, rgb16(255, 255, 255), "Read USAGE.md for info on how to use this");
+	draw_printf(0, 64, 2, rgb16(255, 255, 255), "from the commandline.");
+	draw_printf(0, 80, 2, rgb16(255, 255, 255), "Because the \"main menu\" just isn't *ready* yet.");
+	draw_printf(0, 100, 1, rgb16(255, 255, 255), "(Also this font needs lowercase. Badly.)");
+
 	// TODO!
+
+	// Blit
+	SDL_UnlockSurface(screen);
+	SDL_Flip(screen);
 }
 
-void newbieloop(void)
+int newbieloop(void)
 {
 	SDL_Event ev;
 	int quitflag = 0;
@@ -344,8 +362,9 @@ void newbieloop(void)
 				break;
 		}
 	}
+
+	return (quitflag == -1 ? 0 : quitflag);
 }
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -353,15 +372,47 @@ int main(int argc, char *argv[])
 	if(argc-1 != 1 && argc-1 != 3)
 	{
 		printf("usage:\n\t%s filename.tga [width height]\n", argv[0]);
-		return 99;
+		if(argc-1 != 0)
+			return 99;
 	}
 
-	const char *fname = argv[1];
+	const char *fname = (argc > 1 ? argv[1] : NULL);
+
+	// Load font
+	fontimg = img_load_tga("dat/font8.tga");
+	if(fontimg == NULL)
+		printf("Couldn't load dat/font8.tga! No text will be displayed.\n");
+
+	if(fontimg == NULL && fname == NULL)
+	{
+		char *const message = ""
+			"Uh oh! pixra can't find its font!\r\n"
+			"This program can run without it,\r\n"
+			"but the 'main menu' GUI requires it.\r\n"
+			"\r\n"
+			"You will need to either:\r\n"
+			"1. Make it so pixra can find a 'dat/font8.tga' file, or\r\n"
+			"2. Run pixra in the commandline.\r\n"
+			"\r\n"
+			"See the USAGE.md file for the commandline arguments.\r\n"
+		;
+
+		printf("----\n%s----\n", message);
+
+#ifdef WIN32
+		MessageBox(NULL, message, "pixra", MB_OK | MB_APPLMODAL | MB_ICONSTOP);
+#else
+		char *const msgargs[] = {"/usr/bin/env", "xmessage", message, NULL};
+		execv("/usr/bin/env", msgargs);
+#endif
+
+		return 1;
+	}
 
 	// Set up image
 	rootimg = NULL;
-	if(rootimg == NULL) rootimg = img_load_tga(fname);
-	if(rootimg == NULL)
+	if(rootimg == NULL && fname != NULL) rootimg = img_load_tga(fname);
+	if(rootimg == NULL && fname != NULL)
 	{
 		if(argc <= 3)
 		{
@@ -380,7 +431,7 @@ int main(int argc, char *argv[])
 		rootimg = img_new(w, h);
 	}
 
-	if(rootimg->fname == NULL) rootimg->fname = strdup(fname);
+	if(rootimg != NULL && rootimg->fname == NULL) rootimg->fname = strdup(fname);
 
 	// Init SDL
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
@@ -393,6 +444,10 @@ int main(int argc, char *argv[])
 	SDL_WM_SetCaption("pixra - fast paint tool", NULL);
 	screen = SDL_SetVideoMode(800, 600, 16, 0);
 
+	// Loop for "newbie" menu.
+	if(rootimg == NULL && fname == NULL)
+		if(newbieloop())
+			return 1;
 
 	// Set up GUI
 	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);

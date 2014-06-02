@@ -3,10 +3,14 @@ Copyright (c) 2014 fanzyflani & contributors.
 See LICENCE.txt for licensing information (TL;DR: MIT-style).
 */
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <errno.h>
+#ifndef WIN32
+#include <unistd.h>
+#endif
 
 #include <math.h>
 
@@ -131,6 +135,7 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col);
 void draw_rect8_img(img_t *img, int x1, int y1, int x2, int y2, uint8_t col);
 void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh);
 void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh, uint8_t tcol);
+void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...);
 
 // img.c
 void img_undirty(img_t *img);
@@ -159,6 +164,7 @@ widget_t *w_desk_init(widget_t *g);
 extern SDL_Surface *screen;
 extern img_t *rootimg;
 extern img_t *clipimg;
+extern img_t *fontimg;
 extern widget_t *rootg;
 
 extern int tool_palidx;
