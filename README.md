@@ -4,31 +4,21 @@ pixra (or "xra" for short) is an image editor designed specifically for the Rasp
 
 Just in case you were wondering.
 
-Usage:
-- Keys (usable everywhere):
-  - Esc = Cancel operation
-  - C = Toggle colour picker window
-  - Ctrl-L = Load image
-  - Ctrl-S = Save image
-  - Ctrl-C = Copy image data
-  - Ctrl-X = Cut image data, replacing with drawing colour
-  - Ctrl-V = Paste image data transparently
-  - Ctrl-B = Paste image data obliquely
-  - Ctrl-G = Set grid according to box select
-  - Ctrl-R = Rectangle fill
-  - (TODO) Ctrl-Shift-C = Copy palette data
-  - (TODO) Ctrl-Shift-V = Paste palette data
-  - (TODO) Ctrl-Shift-I = Interpolate palette data
-- Image window:
-  - Left Mouse Button: Draw with pencil
-  - Right Mouse Button: Pick drawing colour from the image
-  - Middle Mouse Button: Scroll the view
-  - Scroll Wheel: Zoom in/out ("pull" to zoom in, "push" to zoom out)
-  - Shift + Left Mouse Button: Box select corner #1
-  - Shift + Right Mouse Button: Box select corner #2
-- Palette window:
-  - Left Mouse Button: Pick drawing colour
-  - Right Mouse Button: Pick transparent colour
-  - (TODO) Shift + Left Mouse Button: Range select inclusive end #1
-  - (TODO) Shift + Right Mouse Button: Range select inclusive end #2
+See USAGE.md for information on how to actually use pixra (namely, the shortcuts).
+TIP: Printing it off is a good idea.
+
+=== Most important TODO before a proper sane prerelease ===
+We need a dialogue for loading / creating the initial image.
+pixra is perfectly usable without it, but this will confuse people who aren't familiar with the commandline.
+Note, if you're one of those people, you should learn how to use it from a commandline as it's nicer that way.
+
+As a workaround, associate .tga files with pixra. This will mean that you won't be able to create new images, but you *will* be able to edit existing ones... as long as they're paletted images, that is.
+
+=== Other TODOs ===
+* The palette editing stuff is a bit lacking. I'd like to see these things:
+  * Palette clipboard
+  * Interpolate between colours
+* UNDO STACK. I really really want to see this happen some time soon.
+* "Tile assist" modes, mostly for making seamless tiles.
+* Now that we have a font, I'd like to see it used.
 

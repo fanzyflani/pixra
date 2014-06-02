@@ -299,24 +299,88 @@ void mainloop(void)
 	}
 }
 
+// This needs to be created because some people don't know what a commandline is.
+// And by some people I mean about 90% of computer users.
+// XXX: Should this be in a different "launcher" program instead?
+#if 0
+void newbieloop_draw(void)
+{
+	// TODO!
+}
+
+void newbieloop(void)
+{
+	SDL_Event ev;
+	int quitflag = 0;
+
+	while(quitflag == 0)
+	{
+		// Draw
+		newbieloop_draw();
+
+		// Delay
+		SDL_Delay(10);
+
+		// Get input
+		while(SDL_PollEvent(&ev))
+		switch(ev.type)
+		{
+			case SDL_QUIT:
+				quitflag = 1;
+				break;
+
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				// TODO!
+				break;
+
+			case SDL_MOUSEMOTION:
+				// TODO!
+				break;
+
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+				// TODO!
+				break;
+		}
+	}
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	// Read arguments
-	if(argc <= 3)
+	if(argc-1 != 1 && argc-1 != 3)
 	{
-		printf("usage:\n\t%s width height filename.tga\n", argv[0]);
+		printf("usage:\n\t%s filename.tga [width height]\n", argv[0]);
 		return 99;
 	}
 
-	int w = atoi(argv[1]);
-	int h = atoi(argv[2]);
-	if(w <= 0 || h <= 0)
+	const char *fname = argv[1];
+
+	// Set up image
+	rootimg = NULL;
+	if(rootimg == NULL) rootimg = img_load_tga(fname);
+	if(rootimg == NULL)
 	{
-		printf("ERROR: invalid dimensions %ix%i\n", w, h);
-		return 1;
+		if(argc <= 3)
+		{
+			printf("To create a new image, specify width and height after the filename\n");
+			return 1;
+		}
+
+		int w = atoi(argv[2]);
+		int h = atoi(argv[3]);
+		if(w <= 0 || h <= 0)
+		{
+			printf("ERROR: invalid dimensions %ix%i\n", w, h);
+			return 1;
+		}
+
+		rootimg = img_new(w, h);
 	}
 
-	const char *fname = argv[3];
+	if(rootimg->fname == NULL) rootimg->fname = strdup(fname);
 
 	// Init SDL
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
@@ -329,11 +393,6 @@ int main(int argc, char *argv[])
 	SDL_WM_SetCaption("pixra - fast paint tool", NULL);
 	screen = SDL_SetVideoMode(800, 600, 16, 0);
 
-	// Set up image
-	rootimg = NULL;
-	if(rootimg == NULL) rootimg = img_load_tga(fname);
-	if(rootimg == NULL) rootimg = img_new(w, h);
-	if(rootimg->fname == NULL) rootimg->fname = strdup(fname);
 
 	// Set up GUI
 	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);

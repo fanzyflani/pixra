@@ -162,6 +162,9 @@ static void w_cpick_draw(widget_t *g, int sx, int sy)
 	{
 		// NOTE: could be faster - this is a kinda slow call!
 		// Hmm, perhaps we could prep an image for this?
+		//
+		// Seems to be "fast enough" right now, so no hurry to fix this just yet.
+		// Maybe when that possible DOS port happens...
 
 		draw_rect32(
 			sx +  2*x + 4,
@@ -171,6 +174,16 @@ static void w_cpick_draw(widget_t *g, int sx, int sy)
 			0xFF000000 | (x<<(y<<3)));
 	}
 
+	uint32_t c = rootimg->pal[tool_palidx];
+
+	for(y = 0; y < 3; y++)
+		draw_rect32(
+			sx +  2*((c>>(y<<3))&255) + 4,
+			sy + 24*y + 4,
+			sx +  2*((c>>(y<<3))&255) + 5,
+			sy + 24*y + 23,
+			rgb32(255, 255, 255));
+
 }
 
 static void w_cpick_pack(widget_t *g, int w, int h)
@@ -178,14 +191,6 @@ static void w_cpick_pack(widget_t *g, int w, int h)
 	// TODO: Sort this out properly
 	g->w = 512+2*4;
 	g->h = 20*3+4*4;
-}
-
-static void w_cpick_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
-{
-#if 0
-	if(bail)
-		widget_reparent(NULL, g);
-#endif
 }
 
 static void w_cpick_mouse_button(widget_t *g, int mx, int my, int button, int state)
@@ -225,6 +230,16 @@ static void w_cpick_mouse_button(widget_t *g, int mx, int my, int button, int st
 			break;
 	}
 
+}
+
+static void w_cpick_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
+{
+	if(buttons == 1 && !bail)
+		w_cpick_mouse_button(g, mx, my, 0, 1);
+#if 0
+	if(bail)
+		widget_reparent(NULL, g);
+#endif
 }
 
 widget_t *w_cpick_init(widget_t *g)
