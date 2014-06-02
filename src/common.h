@@ -162,6 +162,10 @@ extern int tool_cx1;
 extern int tool_cy1;
 extern int tool_cx2;
 extern int tool_cy2;
+extern int tool_gx;
+extern int tool_gy;
+extern int tool_gw;
+extern int tool_gh;
 extern int tool_pe1;
 extern int tool_pe2;
 

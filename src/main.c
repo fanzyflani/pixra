@@ -15,6 +15,10 @@ int tool_cx1 = -1;
 int tool_cy1 = -1;
 int tool_cx2 = -1;
 int tool_cy2 = -1;
+int tool_gx = 0;
+int tool_gy = 0;
+int tool_gw = 8;
+int tool_gh = 8;
 int tool_pe1 = -1;
 int tool_pe2 = -1;
 
@@ -66,11 +70,35 @@ void handle_key(int key, int state)
 	if(!state)
 	switch(key)
 	{
-		case SDLK_s:
-			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+		case SDLK_c:
+			if(!key_mods)
 			{
-				// Save
-				img_save_tga(rootimg->fname, rootimg);
+				// Colour picker window
+				if(g_cpick->parent == NULL)
+				{
+					// Set cpick position
+					g_cpick->x = mouse_x - g_cpick->w/2;
+					g_cpick->y = mouse_y - g_cpick->h/2;
+
+					// Move if touching offscreen
+					if(g_cpick->x < 0) { g_cpick->x = 0; }
+					if(g_cpick->y < 0) { g_cpick->y = 0; }
+					if(g_cpick->x + g_cpick->w > screen->w) {
+						g_cpick->x = screen->w - g_cpick->w; }
+					if(g_cpick->y + g_cpick->h > screen->h) {
+						g_cpick->y = screen->h - g_cpick->h; }
+
+					// Reparent
+					widget_reparent(rootg, g_cpick);
+				} else {
+					// Deparent
+					widget_reparent(NULL, g_cpick);
+				}
+
+			} else if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL)) {
+				// Copy image
+				// TODO!
+
 			}
 
 			break;
@@ -90,33 +118,11 @@ void handle_key(int key, int state)
 
 			break;
 
-		case SDLK_c:
-			if(!key_mods)
+		case SDLK_s:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 			{
-				// Colour picker window
-				if(g_cpick->parent == NULL)
-				{
-					// Set cpick position
-					g_cpick->x = mouse_x - g_cpick->w/2;
-					g_cpick->y = mouse_y - g_cpick->h/2;
-
-					// Move if touching offscreen
-					if(g_cpick->x < 0) { g_cpick->x = 0; }
-					if(g_cpick->y < 0) { g_cpick->y = 0; }
-					if(g_cpick->x + g_cpick->w > screen->w) { g_cpick->x = screen->w - g_cpick->w; }
-					if(g_cpick->y + g_cpick->h > screen->h) { g_cpick->y = screen->h - g_cpick->h; }
-
-					// Reparent
-					widget_reparent(rootg, g_cpick);
-				} else {
-					// Deparent
-					widget_reparent(NULL, g_cpick);
-				}
-
-			} else if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL)) {
-				// Copy
-				// TODO!
-
+				// Save
+				img_save_tga(rootimg->fname, rootimg);
 			}
 
 			break;

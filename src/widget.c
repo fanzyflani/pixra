@@ -305,7 +305,50 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		sx, sy,
 		g->w/rootimg->zoom,
 		g->h/rootimg->zoom);
-	
+
+	// Draw grid
+	if(tool_gw >= 1 && tool_gh >= 1) do
+	{
+		// Transform grid parameters
+		int gx = (tool_gx - rootimg->zx) * rootimg->zoom - 1;
+		int gy = (tool_gy - rootimg->zy) * rootimg->zoom - 1;
+		int gw = tool_gw * rootimg->zoom;
+		int gh = tool_gh * rootimg->zoom;
+
+		// Transform grid bounds
+		int gfx = (0 - rootimg->zx) * rootimg->zoom;
+		int gfy = (0 - rootimg->zy) * rootimg->zoom;
+		int glx = (rootimg->w - rootimg->zx) * rootimg->zoom;
+		int gly = (rootimg->h - rootimg->zy) * rootimg->zoom;
+		
+		// Cut out if out of grid bounds
+		if(glx < 0 || gly < 0 || gfx >= g->w || gfy >= g->h)
+			break;
+
+		// Clip grid bounds
+		if(gfx < 0) gfx = 0;
+		if(gfy < 0) gfy = 0;
+		if(glx > g->w) glx = g->w;
+		if(gly > g->h) gly = g->h;
+
+		// Advance grid x,y
+		if(gx < 0) gx = gw - (-gx % gw);
+		if(gy < 0) gy = gh - (-gy % gh);
+
+		uint16_t c = rgb16(85, 85, 85);
+
+		// Draw vertical
+		for(y = gfy; y < gly; y++)
+		for(x = gx; x < glx; x += gw)
+			*SCR16(sx + x, sy + y) = c;
+
+		// Draw horizontal
+		for(y = gy; y < gly; y += gh)
+		for(x = gfx; x < glx; x++)
+			*SCR16(sx + x, sy + y) = c;
+
+	} while(0);
+
 	// Draw corner #1
 	if(tool_cx1 != -1)
 	{
@@ -328,7 +371,7 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 	}
 
 	// Draw corner #2
-	if(tool_cx1 != -1)
+	if(tool_cx2 != -1)
 	{
 		x = (tool_cx2 - rootimg->zx) * rootimg->zoom - 1;
 		y = (tool_cy2 - rootimg->zy) * rootimg->zoom - 1;
