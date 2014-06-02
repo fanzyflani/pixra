@@ -15,10 +15,10 @@ int tool_cx1 = -1;
 int tool_cy1 = -1;
 int tool_cx2 = -1;
 int tool_cy2 = -1;
-int tool_gx = 0;
-int tool_gy = 0;
-int tool_gw = 8;
-int tool_gh = 8;
+int tool_gx = -1;
+int tool_gy = -1;
+int tool_gw = -1;
+int tool_gh = -1;
 int tool_pe1 = -1;
 int tool_pe2 = -1;
 
@@ -102,6 +102,29 @@ void handle_key(int key, int state)
 			}
 
 			break;
+
+		case SDLK_g:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			if(tool_cx1 != -1 && tool_cx2 != -1)
+			{
+				// Set grid according to box select
+				// Get bounds in order
+				int x1 = (tool_cx1 < tool_cx2 ? tool_cx1 : tool_cx2);
+				int y1 = (tool_cy1 < tool_cy2 ? tool_cy1 : tool_cy2);
+				int x2 = (tool_cx1 > tool_cx2 ? tool_cx1 : tool_cx2);
+				int y2 = (tool_cy1 > tool_cy2 ? tool_cy1 : tool_cy2);
+
+				// Calculate width
+				tool_gw = (x2 - x1) + 1;
+				tool_gh = (y2 - y1) + 1;
+
+				// Calculate corner
+				tool_gx = x1 % tool_gw;
+				tool_gy = y1 % tool_gh;
+			}
+
+			break;
+
 
 		case SDLK_l:
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))

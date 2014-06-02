@@ -306,6 +306,44 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		g->w/rootimg->zoom,
 		g->h/rootimg->zoom);
 
+	// Draw light grid
+	if(rootimg->zoom >= 3) do
+	{
+		// Transform grid bounds
+		int gfx = (0 - rootimg->zx) * rootimg->zoom;
+		int gfy = (0 - rootimg->zy) * rootimg->zoom;
+		int glx = (rootimg->w - rootimg->zx) * rootimg->zoom;
+		int gly = (rootimg->h - rootimg->zy) * rootimg->zoom;
+		
+		// Cut out if out of grid bounds
+		if(glx < 0 || gly < 0 || gfx >= g->w || gfy >= g->h)
+			break;
+
+		// Clip grid bounds
+		if(gfx < 0) gfx = 0;
+		if(gfy < 0) gfy = 0;
+		if(glx > g->w) glx = g->w;
+		if(gly > g->h) gly = g->h;
+
+		uint16_t c = rgb16(32, 32, 32);
+
+		// Get x,y
+		int gx = gfx + rootimg->zoom - 1;
+		int gy = gfy + rootimg->zoom - 1;
+
+		// Draw vertical
+		for(y = gfy; y < gly; y++)
+		for(x = gx; x < glx; x += rootimg->zoom)
+			*SCR16(sx + x, sy + y) = c;
+
+		// Draw horizontal
+		for(y = gy; y < gly; y += rootimg->zoom)
+		for(x = gfx; x < glx; x++)
+			*SCR16(sx + x, sy + y) = c;
+
+	} while(0);
+
+
 	// Draw grid
 	if(tool_gw >= 1 && tool_gh >= 1) do
 	{
