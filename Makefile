@@ -17,7 +17,7 @@ OBJS = \
 INCLUDES = src/common.h
 
 CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isrc -I/usr/local/include `sdl-config --cflags`
-LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) -lz -lm
+LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) -lm
 LIBS_DIRS = -L/usr/local/lib
 LIBS_SDL = `sdl-config --libs`
 
