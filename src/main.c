@@ -317,7 +317,7 @@ void newbieloop_draw(void)
 	draw_printf(0, 48, 2, rgb16(255, 255, 255), "Read USAGE.md for info on how to use this");
 	draw_printf(0, 64, 2, rgb16(255, 255, 255), "from the commandline.");
 	draw_printf(0, 80, 2, rgb16(255, 255, 255), "Because the \"main menu\" just isn't *ready* yet.");
-	draw_printf(0, 100, 1, rgb16(255, 255, 255), "(Also this font needs lowercase. Badly.)");
+	draw_printf(0, 100, 1, rgb16(255, 255, 255), "(Font finally has lowercase!)");
 
 	// TODO!
 
