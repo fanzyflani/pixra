@@ -444,12 +444,16 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		if(tool_cx2 != -1 && tool_cx1 > tool_cx2) x += rootimg->zoom+1;
 		if(tool_cy2 != -1 && tool_cy1 > tool_cy2) y += rootimg->zoom+1;
 
-		if(x >= 0 && y >= 0 && x < g->w && y < g->h)
+		if(x >= 0 && x < g->w)
 		{
 			draw_rect32(
 				sx + x, sy,
 				sx + x, sy + g->h-1,
 				rgb32(0x00,0x80,0xFF));
+		}
+
+		if(y >= 0 && y < g->h)
+		{
 			draw_rect32(
 				sx, /******/ sy + y,
 				sx + g->w-1, sy + y,
@@ -465,12 +469,16 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		if(tool_cx2 >= tool_cx1) x += rootimg->zoom+1;
 		if(tool_cy2 >= tool_cy1) y += rootimg->zoom+1;
 
-		if(x >= 0 && y >= 0 && x < g->w && y < g->h)
+		if(x >= 0 && x < g->w)
 		{
 			draw_rect32(
 				sx + x, sy,
 				sx + x, sy + g->h-1,
 				rgb32(0xFF,0x80,0x00));
+		}
+
+		if(y >= 0 && y < g->h)
+		{
 			draw_rect32(
 				sx, /******/ sy + y,
 				sx + g->w-1, sy + y,
