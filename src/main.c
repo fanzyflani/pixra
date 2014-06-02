@@ -6,7 +6,7 @@ See LICENCE.txt for licensing information (TL;DR: MIT-style).
 #include "common.h"
 
 #ifdef WIN32
-// for MessageBox and MessageBox only
+// for MessageBox and some path crap
 #include <windows.h>
 #endif
 
@@ -468,9 +468,70 @@ int main(int argc, char *argv[])
 	const char *fname = (argc > 1 ? argv[1] : NULL);
 
 	// Load font
-	fontimg = img_load_tga("dat/font8.tga");
+	char fontfnbuf[2048] = "";
+#ifdef HARD_DAT_DIR
+#ifdef WIN32
+	strcpy(fontfnbuf, HARD_DAT_DIR "\\dat\\font8.tga");
+#else
+	strcpy(fontfnbuf, HARD_DAT_DIR "/dat/font8.tga");
+#endif
+#else
+#ifdef WIN32
+	GetModuleFileName(NULL, fontfnbuf, 2047);
+	fontfnbuf[2047] = '\x00';
+
+	// No, I'm not adding shlwapi.
+	char *folfont = fontfnbuf + strlen(fontfnbuf);
+	for(; folfont >= fontfnbuf; folfont--)
+	if(*folfont == '\\')
+	{
+		// Truncate
+		*folfont = '\x00';
+		break;
+	}
+
+	strncat(fontfnbuf, "\\dat\\font8.tga", 2047 - strlen(fontfnbuf));
+
+#else
+	strncpy(fontfnbuf, argv[0], 2048);
+	fontfnbuf[2047] = '\x00';
+
+	// There are two possibilities here.
+	// 1. It was launched globally. Thus, we pretend our files are in /usr/local/share/pixra/.
+	//    (Technically you should compile this with HARD_DAT_DIR set!)
+	// 2. It was launched from some directory. Thus, we follow along.
+	//    (If you relied on #1, note that it's now not going to work!)
+
+	// Why do we use this method? Because, well...
+	// - Linux has /proc/self/exe.
+	// - FreeBSD has /proc/curproc/file, but only if procfs is mounted.
+	// - NetBSD I think has /proc/self/exe but only if something's mounted.
+	//   I don't quite remember what I needed to do, it's been a while.
+
+	// Seeing as I'm devving on FreeBSD and Raspbian Linux,
+	// I don't want too much platform-specific crap *between* the two.
+	// But hey, Windows insists on making people do platform-specific crap.
+
+	// *sigh* I hate Windows.
+
+	char *folfont = fontfnbuf + strlen(fontfnbuf);
+	for(; folfont >= fontfnbuf; folfont--)
+	if(*folfont == '/')
+	{
+		// Truncate
+		*folfont = '\x00';
+		break;
+	}
+
+	if(folfont < fontfnbuf)
+		strcpy(fontfnbuf, "/usr/local/share/pixra/font8.tga");
+	else
+		strncat(fontfnbuf, "/dat/font8.tga", 2047 - strlen(fontfnbuf));
+#endif
+#endif
+	fontimg = img_load_tga(fontfnbuf);
 	if(fontimg == NULL)
-		printf("Couldn't load dat/font8.tga! No text will be displayed.\n");
+		printf("Couldn't load %s! No text will be displayed.\n", fontfnbuf);
 
 	if(fontimg == NULL && fname == NULL)
 	{
