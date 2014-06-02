@@ -18,3 +18,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
+----
+
+SDL 1.2 is Copyright (C) Sam Latinga, 1997-2012,
+and is released under the GNU LGPL v2.1.
+
+The licence text can be found in one of these places:
+- https://gnu.org/licenses/lgpl-2.1.html
+- http://opensource.org/licenses/LGPL-2.1
+
