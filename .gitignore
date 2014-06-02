@@ -6,7 +6,7 @@ pixra
 pixra.exe
 
 # images
-*.tga
+crap/
 
 # admission that i'm not actually perfect
 *.core
