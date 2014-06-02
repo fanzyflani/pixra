@@ -27,3 +27,8 @@ The licence text can be found in one of these places:
 - https://gnu.org/licenses/lgpl-2.1.html
 - http://opensource.org/licenses/LGPL-2.1
 
+The Git repository for pixra contains no SDL code,
+but you will find that you will have to link with SDL to get anywhere.
+This note is mostly for binary releases of pixra.
+
+
