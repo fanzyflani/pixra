@@ -15,13 +15,12 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col)
 	// Enforce x1 <= x2, y1 <= y2.
 	//
 	// I cannot be bothered throwing in a temporary variable,
-	// so I'm doing a subtract ladder instead.
+	// so I'm doing an XOR ladder instead.
 	//
 	// This does a swap, by the way.
 	// Don't believe me? Try the math yourself.
-	// TODO: confirm if -= is safe wrt wraparound! may need ^= instead
-	if(x1 > x2) { x1 -= x2; x2 -= x1; x1 -= x2; }
-	if(y1 > y2) { y1 -= y2; y2 -= y1; y1 -= y2; }
+	if(x1 > x2) { x1 ^= x2; x2 ^= x1; x1 ^= x2; }
+	if(y1 > y2) { y1 ^= y2; y2 ^= y1; y1 ^= y2; }
 
 	// Bail out if off-screen.
 	if(x2 < 0 || y2 < 0) return;
@@ -57,6 +56,50 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col)
 			*(dest++) = dla[x&1];
 	}
 }
+
+void draw_rect8_img(img_t *img, int x1, int y1, int x2, int y2, uint8_t col)
+{
+	int x, y;
+	int w, h, pitch;
+	uint8_t *dest;
+
+	// TODO: Set up a common clip framework.
+
+	// Enforce x1 <= x2, y1 <= y2.
+	//
+	// I cannot be bothered throwing in a temporary variable,
+	// so I'm doing an XOR ladder instead.
+	//
+	// This does a swap, by the way.
+	// Don't believe me? Try the math yourself.
+	if(x1 > x2) { x1 ^= x2; x2 ^= x1; x1 ^= x2; }
+	if(y1 > y2) { y1 ^= y2; y2 ^= y1; y1 ^= y2; }
+
+	// Bail out if off-screen.
+	if(x2 < 0 || y2 < 0) return;
+	if(x1 >= img->w || y1 >= img->h) return;
+
+	// Add to x2,y2 to make it exclusive.
+	x2++; y2++;
+
+	// Pad to fit.
+	if(x1 < 0) x1 = 0;
+	if(x2 > screen->w) x2 = screen->w;
+	if(y1 < 0) y1 = 0;
+	if(y2 > screen->h) y2 = screen->h;
+
+	// Calculate width, height, pitch.
+	w = x2 - x1;
+	h = y2 - y1;
+	pitch = (img->w) - w;
+
+	// Draw!
+	dest = IMG8(img, x1, y1);
+	for(y = 0; y < h; y++, dest += pitch)
+		for(x = 0; x < w; x++)
+			*(dest++) = col;
+}
+
 
 void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh)
 {

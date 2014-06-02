@@ -105,7 +105,7 @@ void handle_key(int key, int state)
 
 		case SDLK_g:
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
-			if(tool_cx1 != -1 && tool_cx2 != -1)
+			{if(tool_cx1 != -1 && tool_cx2 != -1)
 			{
 				// Set grid according to box select
 				// Get bounds in order
@@ -121,7 +121,7 @@ void handle_key(int key, int state)
 				// Calculate corner
 				tool_gx = x1 % tool_gw;
 				tool_gy = y1 % tool_gh;
-			}
+			}}
 
 			break;
 
@@ -138,6 +138,17 @@ void handle_key(int key, int state)
 					rootimg = img;
 				}
 			}
+
+			break;
+
+		case SDLK_r:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			{if(tool_cx1 != -1 && tool_cx2 != -1)
+			{
+				// Rect fill
+				draw_rect8_img(rootimg, tool_cx1, tool_cy1, tool_cx2, tool_cy2, tool_palidx);
+
+			}}
 
 			break;
 

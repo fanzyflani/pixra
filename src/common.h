@@ -128,6 +128,7 @@ uint16_t c32to16(uint32_t c, int x, int y);
 
 // draw.c
 void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col);
+void draw_rect8_img(img_t *img, int x1, int y1, int x2, int y2, uint8_t col);
 void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh);
 
 // img.c

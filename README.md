@@ -12,8 +12,8 @@ Usage:
   - (TODO) Ctrl-C = Copy image data
   - (TODO) Ctrl-X = Cut image data, replacing with drawing colour
   - (TODO) Ctrl-V = Paste image data
-  - (TODO) Ctrl-G = Set grid according to box select
-  - (TODO) Ctrl-R = Rectangle fill
+  - Ctrl-G = Set grid according to box select
+  - Ctrl-R = Rectangle fill
   - (TODO) Ctrl-Shift-C = Copy palette data
   - (TODO) Ctrl-Shift-V = Paste palette data
   - (TODO) Ctrl-Shift-I = Interpolate palette data
