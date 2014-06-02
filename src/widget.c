@@ -256,7 +256,8 @@ static void w_pal_draw(widget_t *g, int sx, int sy)
 	}
 
 	draw_rect32(sx, sy + 512, sx + 127, sy + 512 + 15, rgb32(255, 255, 255));
-	draw_rect32(sx + 2, sy + 512 + 2, sx + 127 - 2, sy + 512 + 15 - 2, rootimg->pal[tool_palidx]);
+	draw_rect32(sx + 2, sy + 512 + 2, sx + 63, sy + 512 + 15 - 2, rootimg->pal[tool_palidx]);
+	draw_rect32(sx + 64, sy + 512 + 2, sx + 127 - 2, sy + 512 + 15 - 2, rootimg->pal[tool_bgidx]);
 
 }
 
@@ -274,8 +275,11 @@ static void w_pal_mouse_button(widget_t *g, int mx, int my, int button, int stat
 	// Check type
 	if(button == 0 && state)
 	{
-		// LMB down: Set palette
+		// LMB down: Pick drawing colour
 		tool_palidx = idx;
+	} else if(button == 2 && state) {
+		// RMB down: Pick transparent colour
+		tool_bgidx = idx;
 	}
 }
 
@@ -306,6 +310,52 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		g->w/rootimg->zoom,
 		g->h/rootimg->zoom);
 
+	// Draw clipboard image (if pasting)
+	if(tool_pasting) do
+	{
+		// Transform coordinates
+		int px1 = ((mouse_x - g->x)/rootimg->zoom);
+		int py1 = ((mouse_y - g->y)/rootimg->zoom);
+		int px2 = px1 + clipimg->w;
+		int py2 = py1 + clipimg->h;
+
+		// Create clip boundary
+		int cpx1 = px1;
+		int cpy1 = py1;
+		int cpx2 = px2;
+		int cpy2 = py2;
+
+		// No really, create the *boundary*
+		if(cpx1 < 0) cpx1 = 0;
+		if(cpy1 < 0) cpy1 = 0;
+		if(cpx2 > g->w/rootimg->zoom) cpx2 = g->w/rootimg->zoom;
+		if(cpy2 > g->h/rootimg->zoom) cpy2 = g->h/rootimg->zoom;
+
+		// Bail out if out of camera range
+		if(cpx1 >= px2 || cpy1 >= py2 || cpx2 <= px1 || cpy2 <= py1)
+			break;
+
+		// Draw
+		if(tool_pasting == 2)
+			draw_img_trans(clipimg, rootimg->zoom,
+				cpx1 - px1,
+				cpy1 - py1,
+				cpx1 * rootimg->zoom + sx,
+				cpy1 * rootimg->zoom + sy,
+				cpx2 - cpx1,
+				cpy2 - cpy1,
+				tool_bgidx);
+		else
+			draw_img(clipimg, rootimg->zoom,
+				cpx1 - px1,
+				cpy1 - py1,
+				cpx1 * rootimg->zoom + sx,
+				cpy1 * rootimg->zoom + sy,
+				cpx2 - cpx1,
+				cpy2 - cpy1);
+
+	} while(0);
+
 	// Draw light grid
 	if(rootimg->zoom >= 3) do
 	{
@@ -314,7 +364,7 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		int gfy = (0 - rootimg->zy) * rootimg->zoom;
 		int glx = (rootimg->w - rootimg->zx) * rootimg->zoom;
 		int gly = (rootimg->h - rootimg->zy) * rootimg->zoom;
-		
+
 		// Cut out if out of grid bounds
 		if(glx < 0 || gly < 0 || gfx >= g->w || gfy >= g->h)
 			break;
@@ -342,7 +392,6 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 			*SCR16(sx + x, sy + y) = c;
 
 	} while(0);
-
 
 	// Draw grid
 	if(tool_gw >= 1 && tool_gh >= 1) do
@@ -392,8 +441,8 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 	{
 		x = (tool_cx1 - rootimg->zx) * rootimg->zoom - 1;
 		y = (tool_cy1 - rootimg->zy) * rootimg->zoom - 1;
-		if(tool_cx1 > tool_cx2) x += rootimg->zoom+1;
-		if(tool_cy1 > tool_cy2) y += rootimg->zoom+1;
+		if(tool_cx2 != -1 && tool_cx1 > tool_cx2) x += rootimg->zoom+1;
+		if(tool_cy2 != -1 && tool_cy1 > tool_cy2) y += rootimg->zoom+1;
 
 		if(x >= 0 && y >= 0 && x < g->w && y < g->h)
 		{
@@ -439,8 +488,6 @@ static void w_img_pack(widget_t *g, int w, int h)
 
 static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int state)
 {
-	if(!state) return;
-
 	int x = mx;
 	int y = my;
 
@@ -451,6 +498,34 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 	y += rootimg->zy;
 	
 	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
+
+	if(tool_pasting && (button != 3 && button != 4))
+	{
+		if(state) return;
+		if(key_mods_drag) return;
+		if(button == 1) return;
+
+		// Check button
+		if(button == 0)
+		{
+			// Paste image
+			int bx = x;
+			int by = y;
+
+			for(by = 0; by < clipimg->h; by++)
+			for(bx = 0; bx < clipimg->w; bx++)
+				if(bx+x >= 0 && bx+x < rootimg->w)
+				if(by+y >= 0 && by+y < rootimg->h)
+				if(tool_pasting == 1 || *IMG8(clipimg, bx, by) != tool_bgidx)
+					*IMG8(rootimg, bx+x, by+y) = *IMG8(clipimg, bx, by);
+		}
+
+		// Drop pasting mode and return
+		tool_pasting = 0;
+		return;
+	}
+
+	if(!state) return;
 
 	if(key_mods_drag)
 	{
@@ -684,6 +759,14 @@ static void w_img_mouse_motion_mmb(widget_t *g, int mx, int my, int dx, int dy, 
 
 static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
 {
+	if(tool_pasting)
+	{
+		if(buttons & 2)
+			buttons = 2;
+		else
+			return;
+	}
+
 	if(!key_mods_drag)
 	{
 		if((buttons & 1) != 0) return w_img_mouse_motion_lmb(g, mx, my, dx, dy, bail);

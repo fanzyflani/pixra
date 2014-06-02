@@ -130,11 +130,13 @@ uint16_t c32to16(uint32_t c, int x, int y);
 void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col);
 void draw_rect8_img(img_t *img, int x1, int y1, int x2, int y2, uint8_t col);
 void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh);
+void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh, uint8_t tcol);
 
 // img.c
 void img_undirty(img_t *img);
 void img_free(img_t *img);
 img_t *img_new(int w, int h);
+img_t *img_copy(img_t *src, int sx1, int sy1, int sx2, int sy2);
 img_t *img_load_tga(const char *fname);
 int img_save_tga(const char *fname, img_t *img);
 
@@ -156,9 +158,11 @@ widget_t *w_desk_init(widget_t *g);
 // main.c
 extern SDL_Surface *screen;
 extern img_t *rootimg;
+extern img_t *clipimg;
 extern widget_t *rootg;
 
 extern int tool_palidx;
+extern int tool_bgidx;
 extern int tool_cx1;
 extern int tool_cy1;
 extern int tool_cx2;
@@ -169,6 +173,7 @@ extern int tool_gw;
 extern int tool_gh;
 extern int tool_pe1;
 extern int tool_pe2;
+extern int tool_pasting;
 
 extern int key_mods;
 extern int key_mods_drag;

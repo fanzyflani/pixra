@@ -101,6 +101,7 @@ img_t *img_new(int w, int h)
 		img->pal[i] = rgb32(r, g, b);
 	}
 #endif
+
 	for(i = 0; i < 256; i++)
 		img->pal[i] = rgb32(0xFF, 0, 0xFF);
 
@@ -148,6 +149,47 @@ img_t *img_new(int w, int h)
 #endif
 	
 	// Image return
+	return img;
+}
+
+// WARNING: THIS FUNCTION CAN RETURN NULL!
+img_t *img_copy(img_t *src, int sx1, int sy1, int sx2, int sy2)
+{
+	int x, y;
+	img_t *img;
+
+	// Get bounds in order
+	int x1 = (sx1 < sx2 ? sx1 : sx2);
+	int y1 = (sy1 < sy2 ? sy1 : sy2);
+	int x2 = (sx1 > sx2 ? sx1 : sx2);
+	int y2 = (sy1 > sy2 ? sy1 : sy2);
+
+	// Clip to region
+	if(x1 < 0) x1 = 0;
+	if(y1 < 0) y1 = 0;
+	if(x2 >= src->w) x2 = src->w-1;
+	if(y2 >= src->h) y2 = src->h-1;
+
+	// Check if in range
+	if(x2 < 0 || y2 < 0 || x2 >= src->w || y2 >= src->h)
+		return NULL;
+
+	// Calculate width, height
+	int w = x2 - x1 + 1;
+	int h = y2 - y1 + 1;
+
+	// Create new image
+	img = img_new(w, h);
+
+	// Copy data
+	for(y = 0; y < h; y++)
+	for(x = 0; x < w; x++)
+		*IMG8(img, x, y) = *IMG8(src, x + x1, y + y1);
+
+	// Copy palette
+	memcpy(img->pal, src->pal, 256 * sizeof(uint32_t));
+
+	// Return!
 	return img;
 }
 

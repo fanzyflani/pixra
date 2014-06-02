@@ -7,20 +7,27 @@ See LICENCE.txt for licensing information (TL;DR: MIT-style).
 
 SDL_Surface *screen = NULL;
 img_t *rootimg = NULL;
+img_t *clipimg = NULL;
 widget_t *rootg = NULL;
 
 // TODO: refactor
 int tool_palidx = 0;
+int tool_bgidx = 0;
+
 int tool_cx1 = -1;
 int tool_cy1 = -1;
 int tool_cx2 = -1;
 int tool_cy2 = -1;
+
 int tool_gx = -1;
 int tool_gy = -1;
 int tool_gw = -1;
 int tool_gh = -1;
+
 int tool_pe1 = -1;
 int tool_pe2 = -1;
+
+int tool_pasting = 0;
 
 widget_t *g_img = NULL;
 widget_t *g_pal = NULL;
@@ -70,6 +77,33 @@ void handle_key(int key, int state)
 	if(!state)
 	switch(key)
 	{
+		case SDLK_ESCAPE:
+			if(!key_mods)
+			{
+				// Cancel stuff
+
+				// Colour picker window
+				if(g_cpick->parent != NULL)
+					widget_reparent(NULL, g_cpick);
+
+				// Paste
+				if(tool_pasting)
+					tool_pasting = 0;
+
+			}
+			break;
+
+		case SDLK_b:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			{if(clipimg != NULL)
+			{
+				// Paste
+				tool_pasting = 1;
+
+			}}
+
+			break;
+
 		case SDLK_c:
 			if(!key_mods)
 			{
@@ -97,7 +131,14 @@ void handle_key(int key, int state)
 
 			} else if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL)) {
 				// Copy image
-				// TODO!
+				img_t *img = img_copy(rootimg, tool_cx1, tool_cy1, tool_cx2, tool_cy2);
+				if(img != NULL)
+				{
+					// Replace clipboard image
+					if(clipimg != NULL) img_free(clipimg);
+					clipimg = img;
+					printf("Copied\n");
+				}
 
 			}
 
@@ -114,7 +155,7 @@ void handle_key(int key, int state)
 				int x2 = (tool_cx1 > tool_cx2 ? tool_cx1 : tool_cx2);
 				int y2 = (tool_cy1 > tool_cy2 ? tool_cy1 : tool_cy2);
 
-				// Calculate width
+				// Calculate width, height
 				tool_gw = (x2 - x1) + 1;
 				tool_gh = (y2 - y1) + 1;
 
@@ -158,6 +199,41 @@ void handle_key(int key, int state)
 				// Save
 				img_save_tga(rootimg->fname, rootimg);
 			}
+
+			break;
+
+		case SDLK_v:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			{if(clipimg != NULL)
+			{
+				// Paste
+				tool_pasting = 2;
+
+			}}
+
+			break;
+
+		case SDLK_x:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			{if(tool_cx1 != -1 && tool_cx2 != -1)
+			{
+				// Cut image
+				img_t *img = img_copy(rootimg, tool_cx1, tool_cy1, tool_cx2, tool_cy2);
+				if(img != NULL)
+				{
+					// Replace clipboard image
+					if(clipimg != NULL) img_free(clipimg);
+					clipimg = img;
+					printf("Copied (Cut)\n");
+
+					// Now draw rectangle
+					draw_rect8_img(rootimg,
+						tool_cx1, tool_cy1,
+						tool_cx2, tool_cy2,
+						tool_bgidx);
+				}
+
+			}}
 
 			break;
 
