@@ -703,7 +703,7 @@ int main(int argc, char *argv[])
 	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);
 	g_img = widget_new(rootg, W_IMG_X1, W_IMG_Y1, W_IMG_X2 - W_IMG_X1, W_IMG_Y2 - W_IMG_Y1, w_img_init);
 	g_pal = widget_new(rootg, W_PAL_X1, W_PAL_Y1, W_PAL_X2 - W_PAL_X1, W_PAL_Y2 - W_PAL_Y1, w_pal_init);
-	g_cpick = widget_new(NULL, 0, 0, 512+2*4, 20*3+4*4, w_cpick_init);
+	g_cpick = widget_new(NULL, 0, 0, 512+2*12, 20*3+2*4+2*12+8, w_cpick_init);
 
 	// Main loop!
 	mainloop();

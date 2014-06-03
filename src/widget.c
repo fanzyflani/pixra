@@ -167,10 +167,10 @@ static void w_cpick_draw(widget_t *g, int sx, int sy)
 		// Maybe when that possible DOS port happens...
 
 		draw_rect32(
-			sx +  2*x + 4,
-			sy + 24*y + 4,
-			sx +  2*x + 5,
-			sy + 24*y + 23,
+			sx +  2*x + 12,
+			sy + 24*y + 12,
+			sx +  2*x + 13,
+			sy + 24*y + 31,
 			0xFF000000 | (x<<(y<<3)));
 	}
 
@@ -178,19 +178,28 @@ static void w_cpick_draw(widget_t *g, int sx, int sy)
 
 	for(y = 0; y < 3; y++)
 		draw_rect32(
-			sx +  2*((c>>(y<<3))&255) + 4,
-			sy + 24*y + 4,
-			sx +  2*((c>>(y<<3))&255) + 5,
-			sy + 24*y + 23,
+			sx +  2*((c>>(y<<3))&255) + 12,
+			sy + 24*y + 12,
+			sx +  2*((c>>(y<<3))&255) + 13,
+			sy + 24*y + 31,
 			rgb32(255, 255, 255));
 
+	int cr = (c>>16)&255;
+	int cg = (c>>8 )&255;
+	int cb = (c>>0 )&255;
+
+	draw_printf(sx + 12, sy + 24*3+8+6, 1, rgb16(255, 255, 255),
+		"#%02X%02X%02X - (%-3i, %-3i, %-3i)"
+		,cr,cg,cb
+		,cr,cg,cb
+	);
 }
 
 static void w_cpick_pack(widget_t *g, int w, int h)
 {
 	// TODO: Sort this out properly
-	g->w = 512+2*4;
-	g->h = 20*3+4*4;
+	g->w = 512+2*12;
+	g->h = 20*3+2*4+2*12+8;
 }
 
 static void w_cpick_mouse_button(widget_t *g, int mx, int my, int button, int state)
@@ -199,8 +208,8 @@ static void w_cpick_mouse_button(widget_t *g, int mx, int my, int button, int st
 	if(button != 0) return;
 
 	// Widget -> Colour mapping
-	mx -= 4;
-	my -= 4;
+	mx -= 12;
+	my -= 12;
 
 	if((my % 24) >= 20) return;
 
@@ -853,8 +862,6 @@ widget_t *w_img_init(widget_t *g)
 
 	return g;
 }
-
-
 
 //
 // DESKTOP CONTAINER WIDGET
