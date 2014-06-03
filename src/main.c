@@ -612,7 +612,8 @@ int main(int argc, char *argv[])
 	if(rootimg != NULL && rootimg->fname == NULL) rootimg->fname = strdup(fname);
 
 	// Init SDL
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
+	// SDL_INIT_TIMER has been dropped due to it breaking valgrind on FreeBSD
+	SDL_Init(SDL_INIT_VIDEO);
 	SDL_EnableUNICODE(1);
 
 	// Correct SDL's stupid signal eating thing (who the hell hooks SIGTERM like that?!)

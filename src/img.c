@@ -51,9 +51,6 @@ void img_free_layer(img_t *img)
 
 void img_free(img_t *img)
 {
-	printf("img free %p\n", img);
-	usleep(100000);
-
 	// Free the undo stack
 	if(img->undo != NULL)
 	{
@@ -71,7 +68,6 @@ void img_free(img_t *img)
 
 	// Free image
 	img_free_layer(img);
-	free(img);
 }
 
 img_t *img_new(int w, int h)
@@ -238,7 +234,6 @@ void img_prune_undo(img_t *img)
 		// Check if we've hit our limit
 		if(total > UNDO_MAX)
 		{
-			printf("PRUNE!\n");
 			// We have. Cut the undo stack here.
 			img->undo->redo = NULL;
 			img_free(img->undo);
