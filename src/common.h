@@ -156,6 +156,9 @@ void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw
 void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...);
 void draw_floodfill_img(img_t *img, int dx, int dy, uint8_t col);
 
+// help.c
+extern const char *helptext[];
+
 // img.c
 void img_undirty(img_t *img);
 void img_free(img_t *img);

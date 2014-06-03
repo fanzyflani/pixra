@@ -7,6 +7,7 @@ Command-line arguments:
   * Create a new image: ./pixra filename.tga width height
 
 Keys (usable everywhere):
+* F1 = SHOW THIS HELP AT ANY TIME
 * Esc = Cancel operation
 * C = Toggle colour picker window
 * Ctrl-L = Load image

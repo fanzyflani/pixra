@@ -17,6 +17,8 @@ img_t *fontimg = NULL;
 widget_t *rootg = NULL;
 
 // TODO: refactor
+int tool_help = 0;
+
 int tool_palidx = 0;
 int tool_bgidx = 0;
 
@@ -54,6 +56,19 @@ void mainloop_draw(void)
 	// Draw stuff
 	rootg->f_draw(rootg, rootg->x, rootg->y);
 
+	// Draw help
+	if(tool_help)
+	{
+		int y;
+		for(y = 0; helptext[y] != NULL; y++)
+		{
+			draw_rect32(g_img->x, y<<3,
+				g_img->x + (strlen(helptext[y])<<3)-1, (y<<3)+7,
+				rgb32(0, 0, 0));
+			draw_printf(g_img->x, y<<3, 1, rgb16(255, 255, 255), "%s", helptext[y]);
+		}
+	}
+
 	// Blit
 	SDL_UnlockSurface(screen);
 	SDL_Flip(screen);
@@ -83,6 +98,10 @@ void handle_key(int key, int state)
 	if(!state)
 	switch(key)
 	{
+		case SDLK_F1:
+			tool_help = !tool_help;
+			break;
+
 		case SDLK_ESCAPE:
 			if(!key_mods)
 			{
@@ -91,6 +110,9 @@ void handle_key(int key, int state)
 				// Colour picker window
 				if(g_cpick->parent != NULL)
 					widget_reparent(NULL, g_cpick);
+
+				// Help text
+				tool_help = 0;
 
 				// Paste
 				if(tool_aux)

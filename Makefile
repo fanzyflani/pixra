@@ -7,6 +7,7 @@ BINNAME = pixra
 OBJS = \
 	$(OBJDIR)/conv.o \
 	$(OBJDIR)/draw.o \
+	$(OBJDIR)/help.o \
 	$(OBJDIR)/img.o \
 	$(OBJDIR)/tool.o \
 	$(OBJDIR)/widget.o \
