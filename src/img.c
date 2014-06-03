@@ -39,18 +39,38 @@ void img_undirty(img_t *img)
 	img->dirty = 0;
 }
 
-void img_free(img_t *img)
+void img_free_layer(img_t *img)
 {
 	// Free some simple pointers
 	if(img->data != NULL) free(img->data);
-	if(img->ldata != NULL) free(img->ldata);
 	if(img->fname != NULL) free(img->fname);
 
-	// TODO: Undo stack
-	if(img->undo_top != NULL) fprintf(stderr, "LEAK: img->undo_top!\n");
-	if(img->undo_bottom != NULL) fprintf(stderr, "LEAK: img->undo_bottom!\n");
+	// Free image
+	free(img);
+}
+
+void img_free(img_t *img)
+{
+	printf("img free %p\n", img);
+	usleep(100000);
+
+	// Free the undo stack
+	if(img->undo != NULL)
+	{
+		img->undo->redo = NULL;
+		img_free(img->undo);
+		img->undo = NULL;
+	}
+
+	if(img->redo != NULL)
+	{
+		img->redo->undo = NULL;
+		img_free(img->redo);
+		img->redo = NULL;
+	}
 
 	// Free image
+	img_free_layer(img);
 	free(img);
 }
 
@@ -69,10 +89,9 @@ img_t *img_new(int w, int h)
 	img->zoom = 2;
 	img->zx = 0;
 	img->zy = 0;
-	img->undo_top = NULL;
-	img->undo_bottom = NULL;
-	img->undosz_total = 0;
-	img->undosz_bottom = 0;
+	img->undo = NULL;
+	img->redo = NULL;
+	img->undosz_this = sizeof(img_t) + w*h*1 + 128;
 
 	// Image palette
 #if 0
@@ -136,7 +155,6 @@ img_t *img_new(int w, int h)
 
 	// Image data
 	img->data = malloc(w*h);
-	img->ldata = malloc(w*h);
 
 #if 0
 	// TEST: XOR pattern
@@ -189,8 +207,69 @@ img_t *img_copy(img_t *src, int sx1, int sy1, int sx2, int sy2)
 	// Copy palette
 	memcpy(img->pal, src->pal, 256 * sizeof(uint32_t));
 
+	// Copy filename
+	img->fname = strdup(src->fname);
+
+	// Copy camera state
+	img->zoom = src->zoom;
+	img->zx = src->zx;
+	img->zy = src->zy;
+	
+	// Mark dirty
+	img->dirty = 1;
+
 	// Return!
 	return img;
+}
+
+void img_prune_undo(img_t *img)
+{
+	// Using *2 so we don't overflow past UNDO_MAX
+	int total = img->undosz_this*2;
+
+	while(img->undo != NULL)
+	{
+		// Add to total
+		total += img->undo->undosz_this;
+
+		// Check if we've hit our limit
+		if(total > UNDO_MAX)
+		{
+			// We have. Cut the undo stack here.
+			img->undo->redo = NULL;
+			img_free(img->undo);
+			img->undo = NULL;
+			break;
+		}
+
+		// Move on
+		img = img->undo;
+	}
+}
+
+void img_push_undo(img_t *img)
+{
+	// Free redo stack
+	if(img->redo != NULL)
+	{
+		img->redo->undo = NULL;
+		img_free(img->redo);
+		img->redo = NULL;
+	}
+
+	// Prune undo stack (so we don't overflow past UNDO_MAX)
+	img_prune_undo(img);
+
+	// Copy image
+	img_t *lower = img_copy(img, 0, 0, img->w-1, img->h-1);
+
+	// Apply to undo stack
+	if(img->undo != NULL)
+		img->undo->redo = lower;
+
+	lower->undo = img->undo;
+	lower->redo = img;
+	img->undo = lower;
 }
 
 img_t *img_load_tga(const char *fname)

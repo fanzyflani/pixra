@@ -176,6 +176,9 @@ void handle_key(int key, int state)
 		case SDLK_l:
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 			{
+				// Push undo step
+				img_push_undo(rootimg);
+
 				// Load
 				img_t *img = img_load_tga(rootimg->fname);
 
@@ -227,6 +230,9 @@ void handle_key(int key, int state)
 				img_t *img = img_copy(rootimg, tool_cx1, tool_cy1, tool_cx2, tool_cy2);
 				if(img != NULL)
 				{
+					// Push undo step
+					img_push_undo(rootimg);
+
 					// Replace clipboard image
 					if(clipimg != NULL) img_free(clipimg);
 					clipimg = img;
@@ -240,6 +246,28 @@ void handle_key(int key, int state)
 				}
 
 			}}
+
+			break;
+
+		case SDLK_z:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			{
+				// Undo
+				if(rootimg->undo != NULL)
+				{
+					rootimg = rootimg->undo;
+					rootimg->dirty = 1;
+				}
+
+			} else if((key_mods & (KM_CTRL | KM_SHIFT)) && !(key_mods & ~(KM_CTRL | KM_SHIFT))) {
+				// Redo
+				if(rootimg->redo != NULL)
+				{
+					rootimg = rootimg->redo;
+					rootimg->dirty = 1;
+				}
+
+			}
 
 			break;
 

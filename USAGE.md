@@ -15,6 +15,8 @@ Keys (usable everywhere):
 * Ctrl-X = Cut image data, replacing with drawing colour
 * Ctrl-V = Paste image data transparently
 * Ctrl-B = Paste image data obliquely
+* Ctrl-Z = Undo
+* Ctrl-Shift-Z = Redo
 * Ctrl-G = Set grid according to box select
 * Ctrl-R = Rectangle fill
 * (TODO) Ctrl-Shift-C = Copy palette data

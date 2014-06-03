@@ -21,6 +21,15 @@ See LICENCE.txt for licensing information (TL;DR: MIT-style).
 
 #include <signal.h>
 
+// Maximum space for undo stack in bytes.
+// Shifting right 20 gives us the size in megabytes.
+// We'll go with 16MB as a default for now.
+#ifndef UNDO_MAX
+#define UNDO_MAX (16 <<20)
+#endif
+
+// This can be done later.
+#if 0
 typedef enum
 {
 	UNDO_INVALID = 0,
@@ -62,8 +71,10 @@ union undo
 		// TODO!
 	} resize;
 };
+#endif
 
-typedef struct img
+typedef struct img img_t;
+struct img
 {
 	// Image stuff
 	int w, h;
@@ -75,12 +86,10 @@ typedef struct img
 	char *fname;
 	int dirty;
 	int zoom, zx, zy;
-	uint8_t *ldata;
-	undo_t *undo_top;
-	undo_t *undo_bottom;
-	size_t undosz_total;
-	size_t undosz_bottom;
-} img_t;
+	img_t *undo;
+	img_t *redo;
+	int undosz_this;
+};
 
 typedef struct widget widget_t;
 struct widget
@@ -142,6 +151,7 @@ void img_undirty(img_t *img);
 void img_free(img_t *img);
 img_t *img_new(int w, int h);
 img_t *img_copy(img_t *src, int sx1, int sy1, int sx2, int sy2);
+void img_push_undo(img_t *img);
 img_t *img_load_tga(const char *fname);
 int img_save_tga(const char *fname, img_t *img);
 

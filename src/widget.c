@@ -531,6 +531,9 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 		// Check button
 		if(button == 0)
 		{
+			// Push undo step
+			img_push_undo(rootimg);
+
 			// Paste image
 			int bx = x;
 			int by = y;
@@ -607,6 +610,9 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 
 	if(button == 0)
 	{
+		// Push undo step
+		img_push_undo(rootimg);
+
 		// Put a pixel somewhere
 		if(x >= 0 && y >= 0 && x < rootimg->w && y < rootimg->h)
 		{
