@@ -326,50 +326,73 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		g->h/rootimg->zoom);
 
 	// Draw clipboard image (if pasting)
-	if(tool_pasting) do
+	switch(tool_aux)
 	{
-		// Transform coordinates
-		int px1 = ((mouse_x - g->x)/rootimg->zoom);
-		int py1 = ((mouse_y - g->y)/rootimg->zoom);
-		int px2 = px1 + clipimg->w;
-		int py2 = py1 + clipimg->h;
-
-		// Create clip boundary
-		int cpx1 = px1;
-		int cpy1 = py1;
-		int cpx2 = px2;
-		int cpy2 = py2;
-
-		// No really, create the *boundary*
-		if(cpx1 < 0) cpx1 = 0;
-		if(cpy1 < 0) cpy1 = 0;
-		if(cpx2 > g->w/rootimg->zoom) cpx2 = g->w/rootimg->zoom;
-		if(cpy2 > g->h/rootimg->zoom) cpy2 = g->h/rootimg->zoom;
-
-		// Bail out if out of camera range
-		if(cpx1 >= px2 || cpy1 >= py2 || cpx2 <= px1 || cpy2 <= py1)
+		case TOOL_NORMAL:
 			break;
 
-		// Draw
-		if(tool_pasting == 2)
-			draw_img_trans(clipimg, rootimg->zoom,
-				cpx1 - px1,
-				cpy1 - py1,
-				cpx1 * rootimg->zoom + sx,
-				cpy1 * rootimg->zoom + sy,
-				cpx2 - cpx1,
-				cpy2 - cpy1,
-				tool_bgidx);
-		else
-			draw_img(clipimg, rootimg->zoom,
-				cpx1 - px1,
-				cpy1 - py1,
-				cpx1 * rootimg->zoom + sx,
-				cpy1 * rootimg->zoom + sy,
-				cpx2 - cpx1,
-				cpy2 - cpy1);
+		case TOOL_FLOOD:
+			// Just draw a couple of boxes around the cursor
 
-	} while(0);
+			draw_rect32(
+				mouse_x - 5, mouse_y - 5,
+				mouse_x - 3, mouse_y + 5,
+				rootimg->pal[tool_palidx]);
+
+			draw_rect32(
+				mouse_x + 3, mouse_y + 5,
+				mouse_x + 5, mouse_y - 5,
+				rootimg->pal[tool_palidx]);
+
+			break;
+
+		case TOOL_PASTE:
+		case TOOL_PASTE_TRANS: {
+			// Transform coordinates
+			int px1 = ((mouse_x - g->x)/rootimg->zoom);
+			int py1 = ((mouse_y - g->y)/rootimg->zoom);
+			int px2 = px1 + clipimg->w;
+			int py2 = py1 + clipimg->h;
+
+			// Create clip boundary
+			int cpx1 = px1;
+			int cpy1 = py1;
+			int cpx2 = px2;
+			int cpy2 = py2;
+
+			// No really, create the *boundary*
+			if(cpx1 < 0) cpx1 = 0;
+			if(cpy1 < 0) cpy1 = 0;
+			if(cpx2 > g->w/rootimg->zoom) cpx2 = g->w/rootimg->zoom;
+			if(cpy2 > g->h/rootimg->zoom) cpy2 = g->h/rootimg->zoom;
+
+			// Bail out if out of camera range
+			if(cpx1 >= px2 || cpy1 >= py2 || cpx2 <= px1 || cpy2 <= py1)
+				break;
+
+			// Draw
+			if(tool_aux == 2)
+				draw_img_trans(clipimg, rootimg->zoom,
+					cpx1 - px1,
+					cpy1 - py1,
+					cpx1 * rootimg->zoom + sx,
+					cpy1 * rootimg->zoom + sy,
+					cpx2 - cpx1,
+					cpy2 - cpy1,
+					tool_bgidx);
+
+			else
+				draw_img(clipimg, rootimg->zoom,
+					cpx1 - px1,
+					cpy1 - py1,
+					cpx1 * rootimg->zoom + sx,
+					cpy1 * rootimg->zoom + sy,
+					cpx2 - cpx1,
+					cpy2 - cpy1);
+
+		} break;
+
+	}
 
 	// Draw light grid
 	if(rootimg->zoom >= 3) do
@@ -522,7 +545,7 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 	
 	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
 
-	if(tool_pasting && (button != 3 && button != 4))
+	if(tool_aux && (button != 3 && button != 4))
 	{
 		if(state) return;
 		if(key_mods_drag) return;
@@ -534,20 +557,35 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 			// Push undo step
 			img_push_undo(rootimg);
 
-			// Paste image
-			int bx = x;
-			int by = y;
+			switch(tool_aux)
+			{
+				case TOOL_PASTE:
+				case TOOL_PASTE_TRANS: {
+					// Paste image
+					int bx = x;
+					int by = y;
 
-			for(by = 0; by < clipimg->h; by++)
-			for(bx = 0; bx < clipimg->w; bx++)
-				if(bx+x >= 0 && bx+x < rootimg->w)
-				if(by+y >= 0 && by+y < rootimg->h)
-				if(tool_pasting == 1 || *IMG8(clipimg, bx, by) != tool_bgidx)
-					*IMG8(rootimg, bx+x, by+y) = *IMG8(clipimg, bx, by);
+					for(by = 0; by < clipimg->h; by++)
+					for(bx = 0; bx < clipimg->w; bx++)
+						if(bx+x >= 0 && bx+x < rootimg->w)
+						if(by+y >= 0 && by+y < rootimg->h)
+						if(tool_aux == TOOL_PASTE || *IMG8(clipimg, bx, by) != tool_bgidx)
+							*IMG8(rootimg, bx+x, by+y) = *IMG8(clipimg, bx, by);
+					
+				} break;
+				
+				case TOOL_FLOOD:
+					// Flood fill
+					draw_floodfill_img(rootimg, x, y, tool_palidx);
+					break;
+
+				default:
+					break;
+			}
 		}
 
 		// Drop pasting mode and return
-		tool_pasting = 0;
+		tool_aux = 0;
 		return;
 	}
 
@@ -788,7 +826,7 @@ static void w_img_mouse_motion_mmb(widget_t *g, int mx, int my, int dx, int dy, 
 
 static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons)
 {
-	if(tool_pasting)
+	if(tool_aux)
 	{
 		if(buttons & 2)
 			buttons = 2;

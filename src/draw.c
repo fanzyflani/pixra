@@ -245,3 +245,51 @@ void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...)
 	}
 }
 
+static void draw_floodfill_img_step(img_t *img, int dx, int dy, uint8_t ocol, uint8_t ncol)
+{
+	int sx1, sx2;
+
+	// Ensure we have the floodfill parameters correct
+	assert(*IMG8(img, dx, dy) == ocol);
+
+	// Move to left of span
+	while(dx >= 1 && *IMG8(img, dx-1, dy) == ocol) dx--;
+	sx1 = dx;
+	
+	// Move to right of span, changing colours
+	uint8_t *cp = IMG8(img, dx, dy);
+	while(dx < img->w && *cp == ocol)
+	{
+		*(cp++) = ncol;
+		dx++;
+	}
+	sx2 = dx-1;
+
+	// Check top and bottom for spans
+	// We've already filled this span, so this should be simple.
+	for(dx = sx1; dx <= sx2; dx++)
+	{
+		if(dy >= 1 && *IMG8(img, dx, dy-1) == ocol)
+			draw_floodfill_img_step(img, dx, dy-1, ocol, ncol);
+		if(dy+1 < img->h && *IMG8(img, dx, dy+1) == ocol)
+			draw_floodfill_img_step(img, dx, dy+1, ocol, ncol);
+	}
+}
+
+void draw_floodfill_img(img_t *img, int dx, int dy, uint8_t col)
+{
+	uint8_t scol;
+	
+	// Check if in range
+	if(dx < 0 || dy < 0 || dx >= img->w || dy >= img->h) return;
+
+	// Get source colour and check that it doesn't match our current colour
+	// This is because our algorithm requires the colours to be different.
+	scol = *IMG8(img, dx, dy);
+	if(scol == col) return;
+
+	// Perform the floodfill.
+	draw_floodfill_img_step(img, dx, dy, scol, col);
+}
+
+

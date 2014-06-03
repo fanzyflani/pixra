@@ -73,6 +73,15 @@ union undo
 };
 #endif
 
+enum
+{
+	TOOL_NORMAL = 0,
+
+	TOOL_PASTE,
+	TOOL_PASTE_TRANS,
+	TOOL_FLOOD,
+};
+
 typedef struct img img_t;
 struct img
 {
@@ -145,6 +154,7 @@ void draw_rect8_img(img_t *img, int x1, int y1, int x2, int y2, uint8_t col);
 void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh);
 void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh, uint8_t tcol);
 void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...);
+void draw_floodfill_img(img_t *img, int dx, int dy, uint8_t col);
 
 // img.c
 void img_undirty(img_t *img);
@@ -189,7 +199,7 @@ extern int tool_gw;
 extern int tool_gh;
 extern int tool_pe1;
 extern int tool_pe2;
-extern int tool_pasting;
+extern int tool_aux;
 
 extern int key_mods;
 extern int key_mods_drag;

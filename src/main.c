@@ -33,7 +33,7 @@ int tool_gh = -1;
 int tool_pe1 = -1;
 int tool_pe2 = -1;
 
-int tool_pasting = 0;
+int tool_aux = 0;
 
 widget_t *g_img = NULL;
 widget_t *g_pal = NULL;
@@ -93,8 +93,8 @@ void handle_key(int key, int state)
 					widget_reparent(NULL, g_cpick);
 
 				// Paste
-				if(tool_pasting)
-					tool_pasting = 0;
+				if(tool_aux)
+					tool_aux = TOOL_NORMAL;
 
 			}
 			break;
@@ -104,7 +104,7 @@ void handle_key(int key, int state)
 			{if(clipimg != NULL)
 			{
 				// Paste
-				tool_pasting = 1;
+				tool_aux = TOOL_PASTE;
 
 			}}
 
@@ -145,6 +145,16 @@ void handle_key(int key, int state)
 					clipimg = img;
 					printf("Copied\n");
 				}
+
+			}
+
+			break;
+
+		case SDLK_f:
+			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+			{
+				// Flood fill
+				tool_aux = TOOL_FLOOD;
 
 			}
 
@@ -216,7 +226,7 @@ void handle_key(int key, int state)
 			{if(clipimg != NULL)
 			{
 				// Paste
-				tool_pasting = 2;
+				tool_aux = TOOL_PASTE_TRANS;
 
 			}}
 
