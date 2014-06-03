@@ -5,6 +5,7 @@ pixra (or "xra" for short) is an image editor designed specifically for the Rasp
 Just in case you were wondering.
 
 See USAGE.md for information on how to actually use pixra (namely, the shortcuts).
+Or, of course, you can press F1 for in-app quick help.
 TIP: Printing it off is a good idea.
 
 === TODOs ===
