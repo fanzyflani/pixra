@@ -176,6 +176,9 @@ img_t *img_copy(img_t *src, int sx1, int sy1, int sx2, int sy2)
 	int x, y;
 	img_t *img;
 
+	// TODO: For canvas resize to be implemented easily,
+	// this must be able to accept out-of-range coordinates.
+
 	// Get bounds in order
 	int x1 = (sx1 < sx2 ? sx1 : sx2);
 	int y1 = (sy1 < sy2 ? sy1 : sy2);
@@ -235,11 +238,12 @@ void img_prune_undo(img_t *img)
 		// Check if we've hit our limit
 		if(total > UNDO_MAX)
 		{
+			printf("PRUNE!\n");
 			// We have. Cut the undo stack here.
 			img->undo->redo = NULL;
 			img_free(img->undo);
 			img->undo = NULL;
-			break;
+			return;
 		}
 
 		// Move on
@@ -252,6 +256,7 @@ void img_push_undo(img_t *img)
 	// Free redo stack
 	if(img->redo != NULL)
 	{
+		assert(img->redo->undo == img);
 		img->redo->undo = NULL;
 		img_free(img->redo);
 		img->redo = NULL;
@@ -262,14 +267,20 @@ void img_push_undo(img_t *img)
 
 	// Copy image
 	img_t *lower = img_copy(img, 0, 0, img->w-1, img->h-1);
+	assert(lower != NULL);
+	assert(img->undo != lower);
 
 	// Apply to undo stack
-	if(img->undo != NULL)
-		img->undo->redo = lower;
-
+	if(img->undo != NULL) img->undo->redo = lower;
 	lower->undo = img->undo;
 	lower->redo = img;
 	img->undo = lower;
+
+	// Some assertions.
+	assert(img != img->redo);
+	assert(img != img->undo);
+	assert(lower != lower->redo);
+	assert(lower != lower->undo);
 }
 
 img_t *img_load_tga(const char *fname)
