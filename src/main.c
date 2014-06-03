@@ -47,11 +47,21 @@ int mouse_x = 0;
 int mouse_y = 0;
 int mouse_b = 0;
 
+int share_showmsg = 200;
+char share_msg[256] = "Enter filename (*.tga format), and if it doesn't exist, enter width and height";
+
 void mainloop_draw(void)
 {
 	// Clear screen
 	SDL_LockSurface(screen);
 	memset(screen->pixels, 0, screen->pitch * screen->h);
+
+	// Draw message if need be
+	if(share_showmsg > 0)
+	{
+		draw_printf(g_img->x, 0, 1, rgb16(255, 255, 255), "%s", share_msg);
+		share_showmsg--;
+	}
 
 	// Draw stuff
 	rootg->f_draw(rootg, rootg->x, rootg->y);
@@ -62,10 +72,10 @@ void mainloop_draw(void)
 		int y;
 		for(y = 0; helptext[y] != NULL; y++)
 		{
-			draw_rect32(g_img->x, y<<3,
-				g_img->x + (strlen(helptext[y])<<3)-1, (y<<3)+7,
+			draw_rect32(g_img->x, 16+(y<<3),
+				g_img->x + (strlen(helptext[y])<<3)-1, 16+7+(y<<3),
 				rgb32(0, 0, 0));
-			draw_printf(g_img->x, y<<3, 1, rgb16(255, 255, 255), "%s", helptext[y]);
+			draw_printf(g_img->x, 16+(y<<3), 1, rgb16(255, 255, 255), "%s", helptext[y]);
 		}
 	}
 
@@ -168,6 +178,11 @@ void handle_key(int key, int state)
 					printf("Copied\n");
 				}
 
+				// Show message
+				snprintf(share_msg, 255, "Image copied.");
+				share_msg[255] = '\x00';
+				share_showmsg = 200;
+
 			}
 
 			break;
@@ -208,9 +223,6 @@ void handle_key(int key, int state)
 		case SDLK_l:
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 			{
-				// Push undo step
-				img_push_undo(rootimg);
-
 				// Load
 				img_t *img = img_load_tga(rootimg->fname);
 
@@ -218,6 +230,18 @@ void handle_key(int key, int state)
 				{
 					img_free(rootimg);
 					rootimg = img;
+
+					// Show message
+					snprintf(share_msg, 255, "File \"%s\" loaded.", rootimg->fname);
+					share_msg[255] = '\x00';
+					share_showmsg = 200;
+
+				} else {
+					// Show message
+					snprintf(share_msg, 255, "ERROR: Could not load \"%s\"!", rootimg->fname);
+					share_msg[255] = '\x00';
+					share_showmsg = 200;
+
 				}
 			}
 
@@ -238,7 +262,15 @@ void handle_key(int key, int state)
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 			{
 				// Save
+				// FIXME: Don't crash when it can't open the file
+				// (also show an error if it fails)
 				img_save_tga(rootimg->fname, rootimg);
+
+				// Show message
+				snprintf(share_msg, 255, "File \"%s\" saved.", rootimg->fname);
+				share_msg[255] = '\x00';
+				share_showmsg = 200;
+
 			}
 
 			break;
@@ -275,6 +307,11 @@ void handle_key(int key, int state)
 						tool_cx1, tool_cy1,
 						tool_cx2, tool_cy2,
 						tool_bgidx);
+
+					// Show message
+					snprintf(share_msg, 255, "Image cut.");
+					share_msg[255] = '\x00';
+					share_showmsg = 200;
 				}
 
 			}}
@@ -310,6 +347,9 @@ void mainloop(void)
 {
 	SDL_Event ev;
 	int quitflag = 0;
+
+	strcpy(share_msg, "Welcome to pixra! Press F1 for quick help at any time.");
+	share_showmsg = 200;
 
 	while(quitflag == 0)
 	{
@@ -369,8 +409,6 @@ char newbie_fnbuf[2048] = "";
 char newbie_wbuf[7] = "320";
 char newbie_hbuf[7] = "200";
 int newbie_selidx = 0;
-int newbie_showmsg = 200;
-char newbie_msg[256] = "Enter filename (*.tga format), and if it doesn't exist, enter width and height";
 
 void newbieloop_draw(void)
 {
@@ -386,10 +424,10 @@ void newbieloop_draw(void)
 	draw_printf(0, 48, 2, rgb16(255, 255, 255), "%c OK", NEWBIE_ISSEL(3));
 
 	// Draw message if need be
-	if(newbie_showmsg > 0)
+	if(share_showmsg > 0)
 	{
-		draw_printf(0, 80, 1, rgb16(255, 255, 255), "%s", newbie_msg);
-		newbie_showmsg--;
+		draw_printf(0, 80, 1, rgb16(255, 255, 255), "%s", share_msg);
+		share_showmsg--;
 	}
 
 	// Blit
@@ -451,9 +489,9 @@ int newbieloop(void)
 					// Check filename for validity
 					if(strlen(newbie_fnbuf) == 0)
 					{
-						snprintf(newbie_msg, 255, "We need a filename! Type one in!");
-						newbie_msg[255] = '\x00';
-						newbie_showmsg = 200;
+						snprintf(share_msg, 255, "We need a filename! Type one in!");
+						share_msg[255] = '\x00';
+						share_showmsg = 200;
 						break;
 					}
 
@@ -469,9 +507,9 @@ int newbieloop(void)
 
 					if(w < 1 || h < 1)
 					{
-						snprintf(newbie_msg, 255, "Invalid dimensions %i x %i", w, h);
-						newbie_msg[255] = '\x00';
-						newbie_showmsg = 200;
+						snprintf(share_msg, 255, "Invalid dimensions %i x %i", w, h);
+						share_msg[255] = '\x00';
+						share_showmsg = 200;
 						break;
 					}
 
