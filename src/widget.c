@@ -267,8 +267,9 @@ widget_t *w_cpick_init(widget_t *g)
 //
 static void w_pal_draw(widget_t *g, int sx, int sy)
 {
-	int i;
+	int x, y, i;
 
+	// Draw colours
 	for(i = 0; i < 256; i++)
 	{
 		draw_rect32(
@@ -279,9 +280,25 @@ static void w_pal_draw(widget_t *g, int sx, int sy)
 		rootimg->pal[i]);
 	}
 
+	// Draw thing down bottom
 	draw_rect32(sx, sy + 512, sx + 127, sy + 512 + 15, rgb32(255, 255, 255));
 	draw_rect32(sx + 2, sy + 512 + 2, sx + 63, sy + 512 + 15 - 2, rootimg->pal[tool_palidx]);
 	draw_rect32(sx + 64, sy + 512 + 2, sx + 127 - 2, sy + 512 + 15 - 2, rootimg->pal[tool_bgidx]);
+
+	// Draw box showing selected colour
+	i = tool_palidx & 255;
+	x = i&7;
+	y = i>>3;
+
+	x <<= 4;
+	y <<= 4;
+	x += sx;
+	y += sy;
+
+	draw_rect32(x   , y   , x+14, y   , rgb32(1455,1455,1455));
+	draw_rect32(x   , y+1 , x   , y+15, rgb32(  0,  0,  0));
+	draw_rect32(x+1 , y+15, x+15, y+15, rgb32(1455,1455,1455));
+	draw_rect32(x+15, y   , x+15, y+14, rgb32(  0,  0,  0));
 
 }
 

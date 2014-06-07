@@ -251,6 +251,9 @@ void handle_key(int key, int state)
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
 			{if(tool_cx1 != -1 && tool_cx2 != -1)
 			{
+				// Push undo step
+				img_push_undo(rootimg);
+
 				// Rect fill
 				draw_rect8_img(rootimg, tool_cx1, tool_cy1, tool_cx2, tool_cy2, tool_palidx);
 
