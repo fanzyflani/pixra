@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 fanzyflani & contributors.
+Copyright (c) 2014, 2016 fanzyflani & contributors.
 See LICENCE.txt for licensing information (TL;DR: MIT-style).
 */
 
@@ -20,6 +20,12 @@ See LICENCE.txt for licensing information (TL;DR: MIT-style).
 #include <assert.h>
 
 #include <signal.h>
+
+// 16 works well on a raspi.
+// 32 works well on other things.
+// Mix these up and there will be pain.
+//define SCREEN_BPP 16
+#define SCREEN_BPP 32
 
 // Maximum space for undo stack in bytes.
 // Shifting right 20 gives us the size in megabytes.
@@ -123,7 +129,15 @@ struct widget
 #define KM_LSHIFT   0x00000004
 #define KM_RSHIFT   0x00000008
 
+#if SCREEN_BPP == 16
 #define SCR16(x, y) ((x) + (uint16_t *)(screen->pitch * (y) + (uint8_t *)(screen->pixels)))
+#else
+#if SCREEN_BPP == 32
+#define SCR32(x, y) ((x) + (uint32_t *)(screen->pitch * (y) + (uint8_t *)(screen->pixels)))
+#else
+#error "SCREEN_BPP must be 16 or 32"
+#endif
+#endif
 #define IMG16(img, x, y) ((x) + (uint16_t *)(img->w * (y) + (uint8_t *)(img->data)))
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
 

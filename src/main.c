@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 fanzyflani & contributors.
+Copyright (c) 2014, 2016 fanzyflani & contributors.
 See LICENCE.txt for licensing information (TL;DR: MIT-style).
 */
 
@@ -49,6 +49,22 @@ int mouse_b = 0;
 
 int share_showmsg = 200;
 char share_msg[256] = "Enter filename (*.tga format), and if it doesn't exist, enter width and height";
+
+void resize_widgets(void)
+{
+	rootg->w = screen->w;
+	rootg->h = screen->h;
+
+	g_img->x = W_IMG_X1;
+	g_img->y = W_IMG_Y1;
+	g_img->w = W_IMG_X2 - W_IMG_X1;
+	g_img->h = W_IMG_Y2 - W_IMG_Y1;
+
+	g_pal->x = W_PAL_X1;
+	g_pal->y = W_PAL_Y1;
+	g_pal->w = W_PAL_X2 - W_PAL_X1;
+	g_pal->h = W_PAL_Y2 - W_PAL_Y1;
+}
 
 void mainloop_draw(void)
 {
@@ -368,6 +384,11 @@ void mainloop(void)
 		{
 			case SDL_QUIT:
 				quitflag = 1;
+				break;
+
+			case SDL_VIDEORESIZE:
+				screen = SDL_SetVideoMode(ev.resize.w, ev.resize.h, SCREEN_BPP, SDL_RESIZABLE);
+				resize_widgets();
 				break;
 
 			case SDL_KEYDOWN:
@@ -695,7 +716,7 @@ int main(int argc, char *argv[])
 
 	// Set video mode
 	SDL_WM_SetCaption("pixra - fast paint tool", NULL);
-	screen = SDL_SetVideoMode(800, 600, 16, 0);
+	screen = SDL_SetVideoMode(800, 600, SCREEN_BPP, SDL_RESIZABLE);
 
 	// Loop for "newbie" menu.
 	if(rootimg == NULL && fname == NULL)

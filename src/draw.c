@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 fanzyflani & contributors.
+Copyright (c) 2014, 2016 fanzyflani & contributors.
 See LICENCE.txt for licensing information (TL;DR: MIT-style).
 */
 
@@ -9,8 +9,13 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col)
 {
 	int x, y;
 	int w, h, pitch;
+#if SCREEN_BPP == 16
 	uint16_t dl[2][2];
 	uint16_t *dest;
+#endif
+#if SCREEN_BPP == 32
+	uint32_t *dest;
+#endif
 
 	// Enforce x1 <= x2, y1 <= y2.
 	//
@@ -38,6 +43,8 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col)
 	// Calculate width, height, pitch.
 	w = x2 - x1;
 	h = y2 - y1;
+
+#if SCREEN_BPP == 16
 	pitch = (screen->pitch>>1) - w;
 
 	// Build dither table.
@@ -55,6 +62,16 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col)
 		for(x = 0; x < w; x++)
 			*(dest++) = dla[x&1];
 	}
+#endif
+#if SCREEN_BPP == 32
+	pitch = (screen->pitch>>2) - w;
+
+	// Draw!
+	dest = SCR32(x1, y1);
+	for(y = 0; y < h; y++, dest += pitch)
+		for(x = 0; x < w; x++)
+			*(dest++) = col;
+#endif
 }
 
 void draw_rect8_img(img_t *img, int x1, int y1, int x2, int y2, uint8_t col)
@@ -84,9 +101,9 @@ void draw_rect8_img(img_t *img, int x1, int y1, int x2, int y2, uint8_t col)
 
 	// Pad to fit.
 	if(x1 < 0) x1 = 0;
-	if(x2 > screen->w) x2 = screen->w;
+	if(x2 > img->w) x2 = img->w;
 	if(y1 < 0) y1 = 0;
-	if(y2 > screen->h) y2 = screen->h;
+	if(y2 > img->h) y2 = img->h;
 
 	// Calculate width, height, pitch.
 	w = x2 - x1;
@@ -134,6 +151,7 @@ void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int 
 
 	// Draw the image.
 	// TODO: Specialised per-level zoom
+#if SCREEN_BPP == 16
 	dp = screen->pitch >> 1;
 	for(y = 0; y < sh; y++)
 	{
@@ -149,6 +167,24 @@ void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int 
 					dest[ty * dp] = img->dpal[(tx&1)+((ty&1)<<1)][sv];
 		}
 	}
+#endif
+#if SCREEN_BPP == 32
+	dp = screen->pitch >> 2;
+	for(y = 0; y < sh; y++)
+	{
+		uint8_t *src = IMG8(img, sx, y + sy);
+		uint32_t *dest = SCR32(dx, dy + y*zoom);
+
+		for(x = 0; x < sw; x++)
+		{
+			uint32_t sv = *(src++);
+
+			for(tx = 0; tx < zoom; tx++, dest++)
+				for(ty = 0; ty < zoom; ty++)
+					dest[ty * dp] = img->pal[sv];
+		}
+	}
+#endif
 }
 
 void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int sh, uint8_t tcol)
@@ -185,6 +221,7 @@ void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw
 
 	// Draw the image.
 	// TODO: Specialised per-level zoom
+#if SCREEN_BPP == 16
 	dp = screen->pitch >> 1;
 	for(y = 0; y < sh; y++)
 	{
@@ -207,6 +244,31 @@ void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw
 			}
 		}
 	}
+#endif
+#if SCREEN_BPP == 32
+	dp = screen->pitch >> 2;
+	for(y = 0; y < sh; y++)
+	{
+		uint8_t *src = IMG8(img, sx, y + sy);
+		uint32_t *dest = SCR32(dx, dy + y*zoom);
+
+		for(x = 0; x < sw; x++)
+		{
+			uint32_t sv = *(src++);
+
+			if(sv != tcol)
+			{
+				for(tx = 0; tx < zoom; tx++, dest++)
+					for(ty = 0; ty < zoom; ty++)
+						dest[ty * dp] = img->pal[sv];
+
+			} else {
+				dest += zoom;
+
+			}
+		}
+	}
+#endif
 }
 
 void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...)

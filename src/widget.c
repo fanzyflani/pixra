@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 fanzyflani & contributors.
+Copyright (c) 2014, 2016 fanzyflani & contributors.
 See LICENCE.txt for licensing information (TL;DR: MIT-style).
 */
 
@@ -439,11 +439,12 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		if(glx > g->w) glx = g->w;
 		if(gly > g->h) gly = g->h;
 
-		uint16_t c = rgb16(32, 32, 32);
-
 		// Get x,y
 		int gx = gfx + rootimg->zoom - 1;
 		int gy = gfy + rootimg->zoom - 1;
+
+#if SCREEN_BPP == 16
+		uint16_t c = rgb16(32, 32, 32);
 
 		// Draw vertical
 		for(y = gfy; y < gly; y++)
@@ -454,6 +455,20 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		for(y = gy; y < gly; y += rootimg->zoom)
 		for(x = gfx; x < glx; x++)
 			*SCR16(sx + x, sy + y) = c;
+#endif
+#if SCREEN_BPP == 32
+		uint32_t c = rgb32(32, 32, 32);
+
+		// Draw vertical
+		for(y = gfy; y < gly; y++)
+		for(x = gx; x < glx; x += rootimg->zoom)
+			*SCR32(sx + x, sy + y) = c;
+
+		// Draw horizontal
+		for(y = gy; y < gly; y += rootimg->zoom)
+		for(x = gfx; x < glx; x++)
+			*SCR32(sx + x, sy + y) = c;
+#endif
 
 	} while(0);
 
@@ -486,6 +501,7 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		if(gx < 0) gx = gw - (-gx % gw);
 		if(gy < 0) gy = gh - (-gy % gh);
 
+#if SCREEN_BPP == 16
 		uint16_t c = rgb16(85, 85, 85);
 
 		// Draw vertical
@@ -497,6 +513,20 @@ static void w_img_draw(widget_t *g, int sx, int sy)
 		for(y = gy; y < gly; y += gh)
 		for(x = gfx; x < glx; x++)
 			*SCR16(sx + x, sy + y) = c;
+#endif
+#if SCREEN_BPP == 32
+		uint32_t c = rgb32(85, 85, 85);
+
+		// Draw vertical
+		for(y = gfy; y < gly; y++)
+		for(x = gx; x < glx; x += gw)
+			*SCR32(sx + x, sy + y) = c;
+
+		// Draw horizontal
+		for(y = gy; y < gly; y += gh)
+		for(x = gfx; x < glx; x++)
+			*SCR32(sx + x, sy + y) = c;
+#endif
 
 	} while(0);
 
