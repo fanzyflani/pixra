@@ -92,6 +92,30 @@ int widget_mouse_button_sdl(SDL_Event *ev, int bx, int by, widget_t *g)
 	return widget_mouse_button(x, y, button, state, g);
 }
 
+int widget_mouse_wheel(int x, int y, int wdx, int wdy, widget_t *g)
+{
+	x -= g->x;
+	y -= g->y;
+
+	if(x < 0 || y < 0 || x >= g->w || y >= g->h)
+		return 0;
+
+	if(g->f_mouse_wheel != NULL)
+		g->f_mouse_wheel(g, x, y, wdx, wdy);
+
+	return 1;
+}
+
+int widget_mouse_wheel_sdl(SDL_Event *ev, int bx, int by, widget_t *g)
+{
+	int x = mouse_x - bx;
+	int y = mouse_y - by;
+	int wdx = ev->wheel.x;
+	int wdy = ev->wheel.y;
+
+	return widget_mouse_wheel(x, y, wdx, wdy, g);
+}
+
 // WARNING: Frees children as well!
 // If you don't want this to happen, reparent them with widget_reparent!
 void widget_free(widget_t *g)
@@ -143,6 +167,7 @@ widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f
 	g->f_mouse_pass = NULL;
 	g->f_mouse_button = NULL;
 	g->f_mouse_motion = NULL;
+	g->f_mouse_wheel = NULL;
 	g->f_key = NULL;
 
 	return f_init(g);
@@ -601,7 +626,7 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 	
 	// TODO: Deal with the issue where (w, h) % rootimg->zoom != 0
 
-	if(tool_aux && (button != 3 && button != 4))
+	if(tool_aux)
 	{
 		if(state) return;
 		if(key_mods_drag) return;
@@ -662,42 +687,6 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 			}
 
 		}
-
-		return;
-	}
-
-	if(button != 0 && button != 2)
-	{
-		// Calculate old zoom info
-		int lzoom = rootimg->zoom;
-		int lzx = rootimg->zx + mx/lzoom;
-		int lzy = rootimg->zy + my/lzoom;
-
-		// Check scroll wheels
-		if(button == 4)
-		{
-			rootimg->zoom *= 2;
-			if(rootimg->zoom > 64)
-				rootimg->zoom = 64;
-
-		} else if(button == 3) {
-			rootimg->zoom /= 2;
-			if(rootimg->zoom < 1)
-				rootimg->zoom = 1;
-		}
-
-		// No scroll? Return.
-		if(rootimg->zoom == lzoom)
-			return;
-
-		// Calculate new zoom info
-		int nzoom = rootimg->zoom;
-		int nzx = rootimg->zx + mx/nzoom;
-		int nzy = rootimg->zy + my/nzoom;
-
-		// Move camera
-		rootimg->zx -= nzx - lzx;
-		rootimg->zy -= nzy - lzy;
 
 		return;
 	}
@@ -764,7 +753,7 @@ static void w_img_mouse_motion_shift(widget_t *g, int mx, int my, int dx, int dy
 		if(mdy > 0) mdy++;
 
 		// Move mouse
-		SDL_WarpMouse(mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
+		SDL_WarpMouseInWindow(window, mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
 	}
 
 }
@@ -835,7 +824,7 @@ static void w_img_mouse_motion_lmb(widget_t *g, int mx, int my, int dx, int dy, 
 		if(mdy > 0) mdy++;
 
 		// Move mouse
-		SDL_WarpMouse(mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
+		SDL_WarpMouseInWindow(window, mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
 	}
 }
 
@@ -875,7 +864,7 @@ static void w_img_mouse_motion_mmb(widget_t *g, int mx, int my, int dx, int dy, 
 		// TODO: Clamp to image bounds
 
 		// Warp mouse
-		SDL_WarpMouse(mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
+		SDL_WarpMouseInWindow(window, mouse_x + mdx*rootimg->zoom, mouse_y + mdy*rootimg->zoom);
 	}
 
 }
@@ -900,12 +889,47 @@ static void w_img_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int 
 	}
 }
 
+static void w_img_mouse_wheel(widget_t *g, int mx, int my, int wdx, int wdy)
+{
+	// Calculate old zoom info
+	int lzoom = rootimg->zoom;
+	int lzx = rootimg->zx + mx/lzoom;
+	int lzy = rootimg->zy + my/lzoom;
+
+	// Check scroll wheels
+	if(wdy < 0)
+	{
+		rootimg->zoom *= 2;
+		if(rootimg->zoom > 64)
+			rootimg->zoom = 64;
+
+	} else if(wdy > 0) {
+		rootimg->zoom /= 2;
+		if(rootimg->zoom < 1)
+			rootimg->zoom = 1;
+	}
+
+	// No scroll? Return.
+	if(rootimg->zoom == lzoom)
+		return;
+
+	// Calculate new zoom info
+	int nzoom = rootimg->zoom;
+	int nzx = rootimg->zx + mx/nzoom;
+	int nzy = rootimg->zy + my/nzoom;
+
+	// Move camera
+	rootimg->zx -= nzx - lzx;
+	rootimg->zy -= nzy - lzy;
+}
+
 widget_t *w_img_init(widget_t *g)
 {
 	g->f_draw = w_img_draw;
 	g->f_pack = w_img_pack;
 	g->f_mouse_button = w_img_mouse_button;
 	g->f_mouse_motion = w_img_mouse_motion;
+	g->f_mouse_wheel = w_img_mouse_wheel;
 
 	return g;
 }
@@ -960,12 +984,23 @@ static void w_desk_mouse_motion(widget_t *g, int mx, int my, int dx, int dy, int
 			return;
 }
 
+static void w_desk_mouse_wheel(widget_t *g, int mx, int my, int wdx, int wdy)
+{
+	widget_t *child;
+
+	// Traverse children
+	for(child = g->child; child != NULL; child = child->sibn)
+		if(widget_mouse_wheel(mx, my, wdx, wdy, child))
+			return;
+}
+
 widget_t *w_desk_init(widget_t *g)
 {
 	g->f_draw = w_desk_draw;
 	g->f_pack = w_desk_pack;
 	g->f_mouse_button = w_desk_mouse_button;
 	g->f_mouse_motion = w_desk_mouse_motion;
+	g->f_mouse_wheel = w_desk_mouse_wheel;
 
 	return g;
 }

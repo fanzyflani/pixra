@@ -10,7 +10,13 @@ See LICENCE.txt for licensing information (TL;DR: MIT-style).
 #include <windows.h>
 #endif
 
-SDL_Surface *screen = NULL;
+SDL_Window *window = NULL;
+SDL_Renderer *renderer = NULL;
+SDL_Texture *tex_screen = NULL;
+int screen_w = 800;
+int screen_h = 600;
+int screen_pitch = 0;
+void *screen_pixels;
 img_t *rootimg = NULL;
 img_t *clipimg = NULL;
 img_t *fontimg = NULL;
@@ -52,8 +58,19 @@ char share_msg[256] = "Enter filename (*.tga format), and if it doesn't exist, e
 
 void resize_widgets(void)
 {
-	rootg->w = screen->w;
-	rootg->h = screen->h;
+	SDL_DestroyTexture(tex_screen);
+	tex_screen = SDL_CreateTexture(renderer,
+#if SCREEN_BPP == 16
+		SDL_PIXELFORMAT_RGB565,
+#endif
+#if SCREEN_BPP == 32
+		SDL_PIXELFORMAT_ARGB8888,
+#endif
+		SDL_TEXTUREACCESS_STREAMING,
+		screen_w, screen_h);
+
+	rootg->w = screen_w;
+	rootg->h = screen_h;
 
 	g_img->x = W_IMG_X1;
 	g_img->y = W_IMG_Y1;
@@ -69,8 +86,8 @@ void resize_widgets(void)
 void mainloop_draw(void)
 {
 	// Clear screen
-	SDL_LockSurface(screen);
-	memset(screen->pixels, 0, screen->pitch * screen->h);
+	SDL_LockTexture(tex_screen, NULL, &screen_pixels, &screen_pitch);
+	memset(screen_pixels, 0, screen_pitch * screen_h);
 
 	// Draw message if need be
 	if(share_showmsg > 0)
@@ -96,8 +113,9 @@ void mainloop_draw(void)
 	}
 
 	// Blit
-	SDL_UnlockSurface(screen);
-	SDL_Flip(screen);
+	SDL_UnlockTexture(tex_screen);
+	SDL_RenderCopy(renderer, tex_screen, NULL, NULL);
+	SDL_RenderPresent(renderer);
 }
 
 void handle_key(int key, int state)
@@ -171,10 +189,10 @@ void handle_key(int key, int state)
 					// Move if touching offscreen
 					if(g_cpick->x < 0) { g_cpick->x = 0; }
 					if(g_cpick->y < 0) { g_cpick->y = 0; }
-					if(g_cpick->x + g_cpick->w > screen->w) {
-						g_cpick->x = screen->w - g_cpick->w; }
-					if(g_cpick->y + g_cpick->h > screen->h) {
-						g_cpick->y = screen->h - g_cpick->h; }
+					if(g_cpick->x + g_cpick->w > screen_w) {
+						g_cpick->x = screen_w - g_cpick->w; }
+					if(g_cpick->y + g_cpick->h > screen_h) {
+						g_cpick->y = screen_h - g_cpick->h; }
 
 					// Reparent
 					widget_reparent(rootg, g_cpick);
@@ -386,8 +404,14 @@ void mainloop(void)
 				quitflag = 1;
 				break;
 
-			case SDL_VIDEORESIZE:
-				screen = SDL_SetVideoMode(ev.resize.w, ev.resize.h, SCREEN_BPP, SDL_RESIZABLE);
+			case SDL_WINDOWEVENT:
+				if(ev.window.event != SDL_WINDOWEVENT_RESIZED)
+					break;
+				if(ev.window.windowID != SDL_GetWindowID(window))
+					break;
+
+				screen_w = ev.window.data1;
+				screen_h = ev.window.data2;
 				resize_widgets();
 				break;
 
@@ -405,12 +429,14 @@ void mainloop(void)
 				widget_mouse_motion_sdl(&ev, 0, 0, rootg);
 				break;
 
+			case SDL_MOUSEWHEEL:
+				widget_mouse_wheel_sdl(&ev, 0, 0, rootg);
+				break;
+
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
-				// Update mouse_b button bitmask (IF NOT SCROLLWHEEL)
-				if(ev.button.button-1 == 3 || ev.button.button-1 == 4)
-					;
-				else if(ev.type == SDL_MOUSEBUTTONDOWN)
+				// Update mouse_b button bitmask
+				if(ev.type == SDL_MOUSEBUTTONDOWN)
 					mouse_b |= 1<<(ev.button.button-1);
 				else
 					mouse_b &= ~(1<<(ev.button.button-1));
@@ -437,8 +463,8 @@ int newbie_selidx = 0;
 void newbieloop_draw(void)
 {
 	// Clear screen
-	SDL_LockSurface(screen);
-	memset(screen->pixels, 0, screen->pitch * screen->h);
+	SDL_LockTexture(tex_screen, NULL, &screen_pixels, &screen_pitch);
+	memset(screen_pixels, 0, screen_pitch * screen_h);
 
 	// Draw stuff
 #define NEWBIE_ISSEL(x) (newbie_selidx == (x) ? '>' : ' ')
@@ -455,14 +481,18 @@ void newbieloop_draw(void)
 	}
 
 	// Blit
-	SDL_UnlockSurface(screen);
-	SDL_Flip(screen);
+	SDL_UnlockTexture(tex_screen);
+	SDL_RenderCopy(renderer, tex_screen, NULL, NULL);
+	SDL_RenderPresent(renderer);
 }
 
 int newbieloop(void)
 {
 	SDL_Event ev;
 	int quitflag = 0;
+	int i;
+
+	SDL_StartTextInput();
 
 	while(quitflag == 0)
 	{
@@ -543,24 +573,31 @@ int newbieloop(void)
 
 				} break;
 
-				default: {
-					if(newbie_selidx >= 3) break;
+				default:
+					break;
+			} break;
 
-					char *p = (newbie_selidx == 0 ? newbie_fnbuf
-						: newbie_selidx == 1 ? newbie_wbuf
-						: newbie_hbuf);
-					int ml = (newbie_selidx == 0 ? 2048 : 7);
-					int cl = strlen(p);
+			case SDL_TEXTINPUT: {
+				if(newbie_selidx >= 3) break;
 
-					if(ev.key.keysym.unicode >= 32 && ev.key.keysym.unicode < 127)
+				char *p = (newbie_selidx == 0 ? newbie_fnbuf
+					: newbie_selidx == 1 ? newbie_wbuf
+					: newbie_hbuf);
+				int ml = (newbie_selidx == 0 ? 2048 : 7);
+				int cl = strlen(p);
+
+				// we don't support UTF-8 at this stage
+				for(i = 0; i < 32 && ev.text.text[i] != '\x00'; i++)
+				{
+					if(ev.text.text[i] >= 32 && ev.text.text[i] < 127)
 					{
 						if(cl+1 == ml) break;
 
-						p[cl] = (char)ev.key.keysym.unicode;
+						p[cl] = (char)ev.text.text[i];
 						p[cl+1] = '\x00';
 					}
+				}
 
-				} break;
 			} break;
 
 			case SDL_MOUSEMOTION:
@@ -573,6 +610,8 @@ int newbieloop(void)
 				break;
 		}
 	}
+
+	SDL_StopTextInput();
 
 	return (quitflag == -1 ? 0 : quitflag);
 }
@@ -708,15 +747,26 @@ int main(int argc, char *argv[])
 	// Init SDL
 	// SDL_INIT_TIMER has been dropped due to it breaking valgrind on FreeBSD
 	SDL_Init(SDL_INIT_VIDEO);
-	SDL_EnableUNICODE(1);
 
 	// Correct SDL's stupid signal eating thing (who the hell hooks SIGTERM like that?!)
 	signal(SIGINT,  SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 
 	// Set video mode
-	SDL_WM_SetCaption("pixra - fast paint tool", NULL);
-	screen = SDL_SetVideoMode(800, 600, SCREEN_BPP, SDL_RESIZABLE);
+	window = SDL_CreateWindow("pixra - fast paint tool",
+		SDL_WINDOWPOS_UNDEFINED,
+		SDL_WINDOWPOS_UNDEFINED,
+		screen_w, screen_h, SDL_WINDOW_RESIZABLE);
+	renderer = SDL_CreateRenderer(window, -1, 0);
+	tex_screen = SDL_CreateTexture(renderer,
+#if SCREEN_BPP == 16
+		SDL_PIXELFORMAT_RGB565,
+#endif
+#if SCREEN_BPP == 32
+		SDL_PIXELFORMAT_ARGB8888,
+#endif
+		SDL_TEXTUREACCESS_STREAMING,
+		screen_w, screen_h);
 
 	// Loop for "newbie" menu.
 	if(rootimg == NULL && fname == NULL)
@@ -724,7 +774,7 @@ int main(int argc, char *argv[])
 			return 1;
 
 	// Set up GUI
-	rootg = widget_new(NULL, 0, 0, screen->w, screen->h, w_desk_init);
+	rootg = widget_new(NULL, 0, 0, screen_w, screen_h, w_desk_init);
 	g_img = widget_new(rootg, W_IMG_X1, W_IMG_Y1, W_IMG_X2 - W_IMG_X1, W_IMG_Y2 - W_IMG_Y1, w_img_init);
 	g_pal = widget_new(rootg, W_PAL_X1, W_PAL_Y1, W_PAL_X2 - W_PAL_X1, W_PAL_Y2 - W_PAL_Y1, w_pal_init);
 	g_cpick = widget_new(NULL, 0, 0, 512+2*12, 20*3+2*4+2*12+8, w_cpick_init);
@@ -733,6 +783,9 @@ int main(int argc, char *argv[])
 	mainloop();
 
 	// Clean up and go bye bye
+	SDL_DestroyTexture(tex_screen);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
 	return 0;
 }
 

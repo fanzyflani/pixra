@@ -29,23 +29,23 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col)
 
 	// Bail out if off-screen.
 	if(x2 < 0 || y2 < 0) return;
-	if(x1 >= screen->w || y1 >= screen->h) return;
+	if(x1 >= screen_w || y1 >= screen_h) return;
 
 	// Add to x2,y2 to make it exclusive.
 	x2++; y2++;
 
 	// Pad to fit.
 	if(x1 < 0) x1 = 0;
-	if(x2 > screen->w) x2 = screen->w;
+	if(x2 > screen_w) x2 = screen_w;
 	if(y1 < 0) y1 = 0;
-	if(y2 > screen->h) y2 = screen->h;
+	if(y2 > screen_h) y2 = screen_h;
 
 	// Calculate width, height, pitch.
 	w = x2 - x1;
 	h = y2 - y1;
 
 #if SCREEN_BPP == 16
-	pitch = (screen->pitch>>1) - w;
+	pitch = (screen_pitch>>1) - w;
 
 	// Build dither table.
 	dl[0][0] = c32to16(col, x1+0, y1+0);
@@ -64,7 +64,7 @@ void draw_rect32(int x1, int y1, int x2, int y2, uint32_t col)
 	}
 #endif
 #if SCREEN_BPP == 32
-	pitch = (screen->pitch>>2) - w;
+	pitch = (screen_pitch>>2) - w;
 
 	// Draw!
 	dest = SCR32(x1, y1);
@@ -129,8 +129,8 @@ void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int 
 	// TODO: Actually clip and not just bail
 	if(dx < 0) return;
 	if(dy < 0) return;
-	if(dx + sw*zoom > screen->w) return;
-	if(dy + sh*zoom > screen->h) return;
+	if(dx + sw*zoom > screen_w) return;
+	if(dy + sh*zoom > screen_h) return;
 
 	// Move the source coordinates along if negative.
 	if(sx < 0) { dx -= zoom*sx; sw += sx; sx = 0; }
@@ -146,13 +146,13 @@ void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int 
 
 	// Give up if coordinates out of range or width/height useless.
 	if(sx >= img->w || sy >= img->h) return;
-	if(dx >= screen->w || dy >= screen->h) return;
+	if(dx >= screen_w || dy >= screen_h) return;
 	if(dw < zoom || dh < zoom) return;
 
 	// Draw the image.
 	// TODO: Specialised per-level zoom
 #if SCREEN_BPP == 16
-	dp = screen->pitch >> 1;
+	dp = screen_pitch >> 1;
 	for(y = 0; y < sh; y++)
 	{
 		uint8_t *src = IMG8(img, sx, y + sy);
@@ -169,7 +169,7 @@ void draw_img(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw, int 
 	}
 #endif
 #if SCREEN_BPP == 32
-	dp = screen->pitch >> 2;
+	dp = screen_pitch >> 2;
 	for(y = 0; y < sh; y++)
 	{
 		uint8_t *src = IMG8(img, sx, y + sy);
@@ -199,8 +199,8 @@ void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw
 	// TODO: Actually clip and not just bail
 	if(dx < 0) return;
 	if(dy < 0) return;
-	if(dx + sw*zoom > screen->w) return;
-	if(dy + sh*zoom > screen->h) return;
+	if(dx + sw*zoom > screen_w) return;
+	if(dy + sh*zoom > screen_h) return;
 
 	// Move the source coordinates along if negative.
 	if(sx < 0) { dx -= zoom*sx; sw += sx; sx = 0; }
@@ -216,13 +216,13 @@ void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw
 
 	// Give up if coordinates out of range or width/height useless.
 	if(sx >= img->w || sy >= img->h) return;
-	if(dx >= screen->w || dy >= screen->h) return;
+	if(dx >= screen_w || dy >= screen_h) return;
 	if(dw < zoom || dh < zoom) return;
 
 	// Draw the image.
 	// TODO: Specialised per-level zoom
 #if SCREEN_BPP == 16
-	dp = screen->pitch >> 1;
+	dp = screen_pitch >> 1;
 	for(y = 0; y < sh; y++)
 	{
 		uint8_t *src = IMG8(img, sx, y + sy);
@@ -246,7 +246,7 @@ void draw_img_trans(img_t *img, int zoom, int sx, int sy, int dx, int dy, int sw
 	}
 #endif
 #if SCREEN_BPP == 32
-	dp = screen->pitch >> 2;
+	dp = screen_pitch >> 2;
 	for(y = 0; y < sh; y++)
 	{
 		uint8_t *src = IMG8(img, sx, y + sy);
@@ -280,7 +280,7 @@ void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...)
 	if(fontimg == NULL) return;
 
 	// Secondly, make sure dx, dy are in range.
-	if(dx + 8*zoom > screen->w || dy + 8*zoom > screen->h || dy < 0) return;
+	if(dx + 8*zoom > screen_w || dy + 8*zoom > screen_h || dy < 0) return;
 
 	// Now format the string.
 	va_start(va, fmt);
@@ -290,7 +290,7 @@ void draw_printf(int dx, int dy, int zoom, uint16_t c, const char *fmt, ...)
 	// Finally, start drawing it.
 	// TODO: Support multiple colours!
 	uint8_t *cp = (uint8_t *)buf;
-	for(; *cp != '\x00' && dx + zoom*8 <= screen->w; cp++, dx += zoom*8)
+	for(; *cp != '\x00' && dx + zoom*8 <= screen_w; cp++, dx += zoom*8)
 	{
 		// Check if X in range
 		if(dx < 0) continue;

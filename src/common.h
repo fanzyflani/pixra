@@ -118,6 +118,7 @@ struct widget
 	void (*f_mouse_pass)(widget_t *g, int focused);
 	void (*f_mouse_button)(widget_t *g, int mx, int my, int button, int state);
 	void (*f_mouse_motion)(widget_t *g, int mx, int my, int dx, int dy, int bail, int buttons);
+	void (*f_mouse_wheel)(widget_t *g, int mx, int my, int wdx, int wdy);
 	void (*f_key)(widget_t *g, int sym, int chr, int state);
 	void *v1;
 };
@@ -130,10 +131,10 @@ struct widget
 #define KM_RSHIFT   0x00000008
 
 #if SCREEN_BPP == 16
-#define SCR16(x, y) ((x) + (uint16_t *)(screen->pitch * (y) + (uint8_t *)(screen->pixels)))
+#define SCR16(x, y) ((x) + (uint16_t *)(screen_pitch * (y) + (uint8_t *)(screen_pixels)))
 #else
 #if SCREEN_BPP == 32
-#define SCR32(x, y) ((x) + (uint32_t *)(screen->pitch * (y) + (uint8_t *)(screen->pixels)))
+#define SCR32(x, y) ((x) + (uint32_t *)(screen_pitch * (y) + (uint8_t *)(screen_pixels)))
 #else
 #error "SCREEN_BPP must be 16 or 32"
 #endif
@@ -142,8 +143,8 @@ struct widget
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
 
 // TODO: refactor these into some GUI toolkit
-#define EJUSTX(x) (screen->w - x)
-#define EJUSTY(y) (screen->h - y)
+#define EJUSTX(x) (screen_w - x)
+#define EJUSTY(y) (screen_h - y)
 
 #define W_IMG_X1 132
 #define W_IMG_Y1 12
@@ -198,7 +199,12 @@ widget_t *w_img_init(widget_t *g);
 widget_t *w_desk_init(widget_t *g);
 
 // main.c
+extern SDL_Window *window;
 extern SDL_Surface *screen;
+extern int screen_w;
+extern int screen_h;
+extern int screen_pitch;
+extern void *screen_pixels;
 extern img_t *rootimg;
 extern img_t *clipimg;
 extern img_t *fontimg;
