@@ -191,6 +191,8 @@ int widget_mouse_motion(int x, int y, int dx, int dy, int buttons, widget_t *g);
 int widget_mouse_motion_sdl(SDL_Event *ev, int bx, int by, widget_t *g);
 int widget_mouse_button(int x, int y, int button, int state, widget_t *g);
 int widget_mouse_button_sdl(SDL_Event *ev, int bx, int by, widget_t *g);
+int widget_mouse_wheel(int x, int y, int wdx, int wdy, widget_t *g);
+int widget_mouse_wheel_sdl(SDL_Event *ev, int bx, int by, widget_t *g);
 void widget_free(widget_t *g);
 widget_t *widget_new(widget_t *parent, int x, int y, int w, int h, widget_t *(*f_init)(widget_t *g));
 widget_t *w_cpick_init(widget_t *g);
@@ -222,13 +224,19 @@ extern int tool_gw;
 extern int tool_gh;
 extern int tool_pe1;
 extern int tool_pe2;
+extern int tool_size;
+extern int tool_opacity;
 extern int tool_aux;
+
+extern uint32_t tool_noise_mask[32*8*8];
 
 extern int key_mods;
 extern int key_mods_drag;
 extern int mouse_x;
 extern int mouse_y;
 extern int mouse_b;
+extern int share_showmsg;
+extern char share_msg[256];
 extern widget_t *g_img;
 extern widget_t *g_pal;
 extern widget_t *g_cpick;

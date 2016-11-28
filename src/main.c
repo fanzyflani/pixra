@@ -41,7 +41,11 @@ int tool_gh = -1;
 int tool_pe1 = -1;
 int tool_pe2 = -1;
 
+int tool_size = 1;
+int tool_opacity = 100;
 int tool_aux = 0;
+
+uint32_t tool_noise_mask[32*8*8];
 
 widget_t *g_img = NULL;
 widget_t *g_pal = NULL;
@@ -164,6 +168,26 @@ void handle_key(int key, int state)
 
 			}
 			break;
+
+#define OPACITY_KEY(okey, olev) \
+		case okey: \
+			tool_opacity = olev; \
+			snprintf(share_msg, 255, "Opacity set to %d%%.", tool_opacity); \
+			share_msg[255] = '\x00'; \
+			share_showmsg = 200; \
+			break;
+
+		OPACITY_KEY(SDLK_1, 10);
+		OPACITY_KEY(SDLK_2, 20);
+		OPACITY_KEY(SDLK_3, 30);
+		OPACITY_KEY(SDLK_4, 40);
+		OPACITY_KEY(SDLK_5, 50);
+		OPACITY_KEY(SDLK_6, 60);
+		OPACITY_KEY(SDLK_7, 70);
+		OPACITY_KEY(SDLK_8, 80);
+		OPACITY_KEY(SDLK_9, 90);
+		OPACITY_KEY(SDLK_0, 100);
+#undef OPACITY_KEY
 
 		case SDLK_b:
 			if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))

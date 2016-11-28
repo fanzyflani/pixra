@@ -696,11 +696,45 @@ static void w_img_mouse_button(widget_t *g, int mx, int my, int button, int stat
 		// Push undo step
 		img_push_undo(rootimg);
 
+		// Generate noise mask
+		int i;
+		// 0x2000 = 8192
+		// 82*100 = 8200
+		uint32_t mask_thres = tool_opacity*82;
+		memset(tool_noise_mask, 0, sizeof(tool_noise_mask));
+		for(i = 0; i < 32*8*8*32; i++) {
+#ifdef WIN32
+			uint32_t v = (rand()>>0)&0x1FFF;
+#else
+			uint32_t v = (rand()>>16)&0x1FFF;
+#endif
+			if(v < mask_thres) {
+				tool_noise_mask[i>>5] |= 1<<(i&31);
+			}
+		}
+
 		// Put a pixel somewhere
-		if(x >= 0 && y >= 0 && x < rootimg->w && y < rootimg->h)
-		{
-			*IMG8(rootimg, x, y) = tool_palidx;
-			rootimg->dirty = 1; // TODO: Several "dirty" flags
+		// NEW: Can now put several pixels somewhere!
+		int sx, sy;
+		for(sy = -(tool_size+1); sy <= +(tool_size-1); sy++) {
+			int py = sy+y;
+			if(py < 0 || py >= rootimg->h)
+				continue;
+
+			for(sx = -(tool_size+1); sx <= +(tool_size-1); sx++) {
+				int px = sx+x;
+				if(sx*sx+sy*sy >= tool_size*tool_size)
+					continue;
+				if(px < 0 || px >= rootimg->w)
+					continue;
+
+				int pxy0 = px+py*32;
+				uint32_t pn0 = tool_noise_mask[pxy0>>5]>>(pxy0&31);
+				if((pn0&1) != 0) {
+					*IMG8(rootimg, px, py) = tool_palidx;
+					rootimg->dirty = 1; // TODO: Several "dirty" flags
+				}
+			}
 		}
 
 	} else if(button == 2) {
@@ -800,8 +834,28 @@ static void w_img_mouse_motion_lmb(widget_t *g, int mx, int my, int dx, int dy, 
 			if(dc >= 0) { dc -= dcy; lx += dsx; }
 			else /* */ { dc += dcx; ly += dsy; }
 
-			if(lx >= 0 && ly >= 0 && lx < rootimg->w && ly < rootimg->h)
-				*IMG8(rootimg, lx, ly) = tool_palidx;
+			// NEW: Can now put several pixels somewhere!
+			int sx, sy;
+			for(sy = -(tool_size+1); sy <= +(tool_size-1); sy++) {
+				int py = sy+ly;
+				if(py < 0 || py >= rootimg->h)
+					continue;
+
+				for(sx = -(tool_size+1); sx <= +(tool_size-1); sx++) {
+					int px = sx+lx;
+					if(sx*sx+sy*sy >= tool_size*tool_size)
+						continue;
+					if(px < 0 || px >= rootimg->w)
+						continue;
+
+					int pxy0 = px+py*32;
+					uint32_t pn0 = tool_noise_mask[pxy0>>5]>>(pxy0&31);
+					if((pn0&1) != 0) {
+						*IMG8(rootimg, px, py) = tool_palidx;
+						rootimg->dirty = 1; // TODO: Several "dirty" flags
+					}
+				}
+			}
 		}
 
 		rootimg->dirty = 1; // TODO: Several "dirty" flags
@@ -895,6 +949,30 @@ static void w_img_mouse_wheel(widget_t *g, int mx, int my, int wdx, int wdy)
 	int lzoom = rootimg->zoom;
 	int lzx = rootimg->zx + mx/lzoom;
 	int lzy = rootimg->zy + my/lzoom;
+
+	// Check if ctrl pressed
+	if((key_mods & KM_CTRL) && !(key_mods & ~KM_CTRL))
+	{
+		if(wdy < 0)
+		{
+			tool_size += 1;
+			if(tool_size > 1000)
+				tool_size = 1000;
+
+		} else if(wdy > 0) {
+			tool_size -= 1;
+			if(tool_size < 1)
+				tool_size = 1;
+
+		} else {
+			return;
+		}
+
+		snprintf(share_msg, 255, "Tool size: %d", tool_size);
+		share_msg[255] = '\x00';
+		share_showmsg = 200;
+		return;
+	}
 
 	// Check scroll wheels
 	if(wdy < 0)

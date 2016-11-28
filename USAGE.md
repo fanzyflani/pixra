@@ -10,6 +10,7 @@ Keys (usable everywhere):
 * F1 = SHOW THIS HELP AT ANY TIME
 * Esc = Cancel operation
 * C = Toggle colour picker window
+* 1-9,0 = Change tool opacity
 * Ctrl-L = Load image
 * Ctrl-S = Save image
 * Ctrl-C = Copy image data
@@ -30,6 +31,7 @@ Image window:
 * Right Mouse Button: Pick drawing colour from the image
 * Middle Mouse Button: Scroll the view
 * Scroll Wheel: Zoom in/out ("pull" to zoom in, "push" to zoom out)
+* Ctrl + Scroll Wheel: Change tool size
 * Shift + Left Mouse Button: Box select corner #1
 * Shift + Right Mouse Button: Box select corner #2
 
